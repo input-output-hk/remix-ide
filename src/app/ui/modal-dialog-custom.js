@@ -163,6 +163,35 @@ module.exports = {
         return cb('Import cancelled', {})
       }
     })
+  },
+  /**
+   * @rv: connect user to Custom RPC
+   * @param {(error:string, {endpoint:string, chainId:number})=>void} cb
+   */
+  connectToCustomRPC: function(cb) {
+    const customRPCPanel = yo`<div>
+      <p>Please note that your accounts will need to be saved in the browser under this mode.</p>
+      <p>We will sign your transaction directly in the browser before you send it.</p>
+      <input id="rpc-url-input" type="text" name='prompt_text' class="${css['prompt_text']}" placeholder="New RPC URL" >
+      <br><br>
+      <input id="chainId-input" type="text" name='prompt_text' class="${css['prompt_text']}" placeholder="Chain ID (optional)" >
+    </div>`
+    modal(`Custom RPC`, customRPCPanel, {
+      'label': 'Connect',
+      fn: ()=> {
+        const rpcUrl = customRPCPanel.querySelector('#rpc-url-input').value
+        const chainId = parseInt(customRPCPanel.querySelector('#chainId-input').value) || undefined
+        return cb(null, {
+          rpcUrl,
+          chainId
+        })
+      }
+    }, {
+      'label': 'Cancel',
+      fn: ()=> {
+        return cb('Connection cancelled', {})
+      }
+    })
   }
 }
 

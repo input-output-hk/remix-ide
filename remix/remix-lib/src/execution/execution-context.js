@@ -95,14 +95,14 @@ function ExecutionContext () {
   }
 
   // @rv: save password for address temporarily
-  this.addressPasswordMap = {}
+  var addressPasswordMap = {}
   this.saveAddressAndPassword = function(address, password) {
     address = address.replace(/^0x/, '')
-    this.addressPasswordMap[address] = password
+    addressPasswordMap[address] = password
   }
   this.getPasswordFromAddress = function(address) {
     address = address.replace(/^0x/, '')
-    return this.addressPasswordMap[address]
+    return addressPasswordMap[address]
   }
 
   this.getProvider = function () {
@@ -111,6 +111,13 @@ function ExecutionContext () {
 
   this.isVM = function () {
     return executionContext === 'vm'
+  }
+
+  /**
+   * @rv: Check if the current context is of type custom RPC
+   */
+  this.isCustomRPC = function() {
+    return executionContext && executionContext.startsWith('custom-rpc-')
   }
 
   this.web3 = function () {
@@ -158,9 +165,9 @@ function ExecutionContext () {
     return vm
   }
 
-  this.setContext = function (context, endPointUrl, confirmCb, infoCb) {
+  this.setContext = function (context, endPointUrl, confirmCb, infoCb, cb) {
     executionContext = context
-    this.executionContextChange(context, endPointUrl, confirmCb, infoCb)
+    this.executionContextChange(context, endPointUrl, confirmCb, infoCb, cb)
   }
 
   this.executionContextChange = function (context, endPointUrl, confirmCb, infoCb, cb) {
@@ -189,10 +196,10 @@ function ExecutionContext () {
       }
     } else if (context === 'web3') {
       confirmCb(cb)
-    } else if (context === 'kevm-testnet') { // @rv: connect to kevm-testnet
+    } else if (context.startsWith('custom-rpc-')) { // @rv: connect to Custom RPC
       executionContext = context
-      web3.setProvider(new web3.providers.HttpProvider('https://kevm-testnet.iohkdev.io:8546'))
-      self.event.trigger('contextChanged', ['kevm-testnet'])
+      web3.setProvider(new web3.providers.HttpProvider(endPointUrl))
+      self.event.trigger('contextChanged', [context])
       return cb()
     }
   }

@@ -64,7 +64,7 @@ UniversalDApp.prototype.reset = function (contracts, transactionContextAPI) {
 }
 
 UniversalDApp.prototype.newAccount = function (password, cb) {
-  if (executionContext.getProvider() === 'kevm-testnet') { // @rv: account creation for testnet
+  if (executionContext.isCustomRPC()) { // @rv: account creation for testnet
     modalCustom.promptPassphraseCreation((error, password) => {
       if (error) {
         modalCustom.alert(error)
@@ -127,7 +127,7 @@ UniversalDApp.prototype.getAccounts = function (cb) {
     // See: https://github.com/ethereum/web3.js/issues/442
     if (this._api.personalMode()) {
       executionContext.web3().personal.getListAccounts(cb)
-    } else if (executionContext.getProvider() === 'kevm-testnet') { // @rv: kevm testnet, load accounts from `rv-accounts`
+    } else if (executionContext.isCustomRPC()) { // @rv: kevm testnet, load accounts from `rv-accounts`
       const keystores = this._api.config.get('rv-accounts') || []
       const accounts = keystores.map((x)=> '0x' + x.address).filter(x=>x)
       cb(null, accounts)
@@ -326,7 +326,7 @@ UniversalDApp.prototype.runTx = function (args, cb) {
       }
 
       if (!args.useCall &&   // not a call function
-          (executionContext.getProvider() === 'kevm-testnet')) {
+          (executionContext.isCustomRPC())) {
         const accounts = self._api.config.get('rv-accounts')
         const keystore = accounts.filter((x)=> x.address === address.replace(/^0x/, ''))[0]
         if (!keystore) {
@@ -352,6 +352,16 @@ UniversalDApp.prototype.runTx = function (args, cb) {
       var tx = { to: args.to, data: args.data.dataHex, useCall: args.useCall, from: fromAddress, value: value, gasLimit: gasLimit, privateKey: privateKey }
       var payLoad = { funAbi: args.data.funAbi, funArgs: args.data.funArgs, contractBytecode: args.data.contractBytecode, contractName: args.data.contractName }
       var timestamp = Date.now()
+
+      // @rv: pass chainId to `tx`
+      if (executionContext.isCustomRPC()) {
+        const context = executionContext.getProvider()
+        const customRPCList = self._api.config.get('custom-rpc-list')
+        const customRPC = customRPCList.filter((x)=> x && x.context === context)[0]
+        if (customRPC) {
+          tx.chainId = customRPC.chainId
+        }
+      }
 
       self.event.trigger('initiatingTransaction', [timestamp, tx, payLoad])
       self.txRunner.rawRun(tx,
@@ -561,6 +571,56 @@ UniversalDApp.prototype.importAccount = function(cb) {
       }
     } else {
       return cb('Internal Error')
+    }
+  })
+}
+
+/**
+ * @rv: Add custom RPC information to local storage
+ * @param {{rpcUrl:string, chainId:number}} param0 
+ */
+UniversalDApp.prototype.addCustomRPC = function({rpcUrl, chainId}) {
+  rpcUrl = rpcUrl.trim()
+  let name = `${rpcUrl} (chainId: ${chainId})`
+  let context = `custom-rpc-${name}`
+  if (rpcUrl.match(/^https\:\/\/kevm-testnet\.iohkdev\.io:8546/)) { // kevm testnet
+    name = 'KEVM Testnet'
+    context = `custom-rpc-kevm-testnet`
+  }
+  const customRPC = {
+    rpcUrl,
+    chainId,
+    name,
+    context
+  }
+  const customRPCs = this._api.config.get('custom-rpc-list') || []
+  let find = false 
+  for (let i = 0; i < customRPCs.length; i++) {
+    if (customRPCs[i] && customRPCs[i].rpcUrl === rpcUrl) {
+      find = true
+      customRPCs[i] = customRPC
+      break
+    }
+  }
+  if (!find) {
+    customRPCs.push(customRPC)
+  }
+  this._api.config.set('custom-rpc-list', customRPCs)
+  window['UniversalDAppConfig'] = this._api.config
+  return customRPC
+}
+
+/**
+ * @rv: Connect user to Custom RPC
+ * @param {(error:string, customRPC:object)=> void} cb 
+ */
+UniversalDApp.prototype.connectToCustomRPC = function(cb) {
+  modalCustom.connectToCustomRPC((error, {rpcUrl, chainId})=> {
+    if (error) {
+      return cb(error)
+    } else {
+      const customRPC = this.addCustomRPC({rpcUrl, chainId})
+      return cb(null, customRPC)
     }
   })
 }

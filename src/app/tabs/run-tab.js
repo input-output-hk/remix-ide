@@ -120,7 +120,20 @@ function runTab (appAPI = {}, appEvents = {}, opts = {}) {
 
   selectExEnv.addEventListener('change', function (event) {
     let context = selectExEnv.options[selectExEnv.selectedIndex].value
-    executionContext.executionContextChange(context, null, () => {
+
+    // @rv: set endPointUrl for Custom RPC
+    let endPointUrl = null;
+    if (context.startsWith('custom-rpc-')) {
+      const customRPCList = opts.config.get('custom-rpc-list') || []
+      for (let i = 0; i < customRPCList.length; i++) {
+        if (customRPCList[i].context === context) {
+          endPointUrl = customRPCList[i].rpcUrl
+          break
+        }
+      }
+    }
+
+    executionContext.executionContextChange(context, endPointUrl, () => {
       modalDialogCustom.confirm(null, 'Are you sure you want to connect to an ethereum node?', () => {
         modalDialogCustom.prompt(null, 'Web3 Provider Endpoint', 'http://localhost:8545', (target) => {
           executionContext.setProviderFromEndpoint(target, context, (alertMsg) => {
@@ -442,6 +455,8 @@ function contractDropdown (events, appAPI, appEvents, opts, self) {
     section SETTINGS: Environment, Account, Gas, Value
 ------------------------------------------------ */
 function settings (container, appAPI, appEvents, opts) {
+  setupPredefinedCustomRPCs()
+
   // VARIABLES
   var net = yo`<span class=${css.network}></span>`
   const updateNetwork = () => {
@@ -465,10 +480,6 @@ function settings (container, appAPI, appEvents, opts) {
             title="Execution environment does not connect to any node, everything is local and in memory only."
             value="vm" checked name="executionContext"> JavaScript VM
           </option>
-          <option id="kevm-testnet-mode"
-            title="KEVM Testnet"
-            value="kevm-testnet" name="executionContext"> KEVM Testnet
-          </option>
           <option id="injected-mode"
             title="Execution environment has been provided by Metamask or similar provider."
             value="injected" name="executionContext"> Injected Web3
@@ -478,11 +489,24 @@ function settings (container, appAPI, appEvents, opts) {
             If this page is served via https and you access your node via http, it might not work. In this case, try cloning the repository and serving it via http."
             value="web3" name="executionContext"> Web3 Provider
           </option>
+          ${(opts.config.get('custom-rpc-list') || []).map((customRPC)=> yo`
+          <option title="Custom RPC connection."
+            value="${customRPC.context}" name="executionContext"> ${customRPC.name}
+          </option>`)}
         </select>
         <a href="https://github.com/ethereum/EIPs/blob/master/EIPS/eip-155.md" target="_blank"><i class="${css.icon} fa fa-info"></i></a>
+        <i id="remove-custom-rpc-icon" class="${css.icon} fa fa-times" title="Remove selected Custom RPC" onclick=${removeCustomRPC}></i>
       </div>
     </div>
   `
+
+  var environmentExtraEl = yo`
+    <div id="environment-extra-section">
+      <div class="${css.crow}">
+        <div class="${css.rvButton}" style="margin-left:0;width:164px;background-color:hsla(45, 100%, 75%, 0.5);" onclick=${connectToCustomRPC}>Connect to Custom RPC</div>
+      </div>
+    </div>`
+
   var accountEl = yo`
     <div class="${css.crow}">
       <div class="${css.col1_1}">Account</div>
@@ -491,7 +515,7 @@ function settings (container, appAPI, appEvents, opts) {
       <i class="fa fa-plus-circle ${css.icon}" aria-hidden="true" onclick=${newAccount} title="Create a new account"></i>
     </div>
   `
-  
+
   var accountElExtra = yo`
     <div id="account-extra-section">
       <div class="${css.crow}">
@@ -528,6 +552,7 @@ function settings (container, appAPI, appEvents, opts) {
   var el = yo`
     <div class="${css.settings}">
       ${environmentEl}
+      ${environmentExtraEl}
       ${accountEl}
       ${accountElExtra}
       ${gasPriceEl}
@@ -567,10 +592,10 @@ function settings (container, appAPI, appEvents, opts) {
   // @rv: open faucet website
   function openFaucet() {
     const context = executionContext.getProvider()
-    if (context === 'kevm-testnet') {
+    if (context === 'custom-rpc-kevm-testnet') {
       window.open('http://testnet.iohkdev.io/goguen/faucet/#faucet-register', '_blank')
     } else {
-      addTooltip('Invalid context: ' + context)
+      addTooltip('No faucet found for ' + context)
     }
   }
 
@@ -608,16 +633,98 @@ function settings (container, appAPI, appEvents, opts) {
     }
   }
 
+  // @rv: connect to custom rpc
+  function connectToCustomRPC() {
+    opts.udapp.connectToCustomRPC((error, customRPC)=> {
+      if (error) {
+        addTooltip('Failed to connect to Custom RPC: ' + error)
+      } else {
+        const $environmentSelect = $('#selectExEnvOptions')
+        let find = false 
+        const $options = $('option', $environmentSelect)
+        for (let i = 0; i < $options.length; i++) {
+          if ($options[i].getAttribute('value') === customRPC.context) {
+            find = true
+            break
+          }
+        }
+        if (!find) {
+          $environmentSelect.append($(`
+            <option title="Custom RPC connection."
+                  value="${customRPC.context}" name="executionContext"> ${customRPC.name}
+            </option>`))
+        }
+        $environmentSelect[0].value = customRPC.context
+        $environmentSelect[0].dispatchEvent(new Event('change'))
+      }
+    })
+  }
+
+  // @rv: remove custom rpc
+  function removeCustomRPC() {
+    const $environmentSelect = $('#selectExEnvOptions')
+    const context = $environmentSelect.val()
+    const customRPCList = opts.config.get('custom-rpc-list')
+    const newCustomRPCList = []
+    for (let i = 0; i < customRPCList.length; i++) {
+      if (customRPCList[i].context !== context) {
+        newCustomRPCList.push(customRPCList[i])
+      }
+    }
+    
+    opts.config.set('custom-rpc-list', newCustomRPCList) // update `custom-rpc-list`
+
+    const $options = $('option', $environmentSelect) // remove from gui
+    for (let i = 0; i < $options.length; i++) {
+      if ($options[i].getAttribute('value') === context) {
+        $options[i].remove()
+        break
+      }
+    }
+
+    const newContext = newCustomRPCList.length ? newCustomRPCList[0] : 'vm' // change selected environment
+    $environmentSelect[0].value = newContext
+    $environmentSelect[0].dispatchEvent(new Event('change'))
+  }
+
+  // @rv: setup predefined Custom RPCs
+  function setupPredefinedCustomRPCs() {
+    const customRPCList = opts.config.get('custom-rpc-list') || []
+
+    function addIfNotExists(customRPC) {
+      let find = false
+      for (let i = 0; i < customRPCList.length; i++) {
+        if (customRPCList[i].context === customRPC.context) {
+          find = true
+          break
+        }
+      }
+      if (!find) {
+        customRPCList.push(customRPC)
+      }
+    }
+
+    addIfNotExists({
+      name: 'KEVM Testnet',
+      context: 'custom-rpc-kevm-testnet',
+      chainId: undefined,
+      rpcUrl: 'https://kevm-testnet.iohkdev.io:8546/'
+    })
+
+    opts.config.set('custom-rpc-list', customRPCList)
+  }
+
   return el
 }
 
-// @rv
+// @rv: show/hide specific elements
 function toggleRVElements() {
-  const context = executionContext.getProvider()
-  if (context === 'kevm-testnet') {
+  if (executionContext.isCustomRPC()) {
     $('#account-extra-section').show()
+    $('#remove-custom-rpc-icon').show()
   } else {
     $('#account-extra-section').hide()
+    $('#remove-custom-rpc-icon').hide()
   }
 }
 

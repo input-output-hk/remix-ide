@@ -27,25 +27,25 @@ TxRunner.prototype.rawRun = function (args, confirmationCb, gasEstimationForceSe
   run(this, args, Date.now(), confirmationCb, gasEstimationForceSend, promptCb, cb)
 }
 
-TxRunner.prototype._executeTx = function (tx, gasPrice, privateKey, api, promptCb, callback) {
+TxRunner.prototype._executeTx = function (tx, gasPrice, chainId, privateKey, api, promptCb, callback) {
   // console.log('@TxRunner.prototype._executeTx', tx, gasPrice)
   // console.log('                              personalMode: ', api.personalMode())
   if (gasPrice) tx.gasPrice = executionContext.web3().toHex(gasPrice)
   if (api.personalMode()) {
     promptCb(
       (value) => {
-        this._sendTransaction(executionContext.web3().personal.sendTransaction, tx, value, privateKey, callback)
+        this._sendTransaction(executionContext.web3().personal.sendTransaction, tx, value, chainId, privateKey, callback)
       },
       () => {
         return callback('Canceled by user.')
       }
     )
   } else {
-    this._sendTransaction(executionContext.web3().eth.sendTransaction, tx, null, privateKey, callback)
+    this._sendTransaction(executionContext.web3().eth.sendTransaction, tx, null, chainId, privateKey, callback)
   }
 }
 
-TxRunner.prototype._sendTransaction = function (sendTx, tx, pass, privateKey, callback) {
+TxRunner.prototype._sendTransaction = function (sendTx, tx, pass, chainId, privateKey, callback) {
   var self = this
   var cb = function (err, resp) {
     if (err) {
@@ -59,12 +59,14 @@ TxRunner.prototype._sendTransaction = function (sendTx, tx, pass, privateKey, ca
     // console.log('@TxRunner.prototype._sendTransaction', args)
     // console.log(sendTx)
     // @rv: kevm testnet 
-    if (executionContext.getProvider() === 'kevm-testnet') {
+    if (executionContext.isCustomRPC()) {
       privateKey = Buffer.from(privateKey, 'hex') // convert to Buffer
       const nonce = executionContext.web3().eth.getTransactionCount(tx.from, "latest")
       // console.log('* nonce: ', nonce)
       // console.log('* gas: ', tx.gas)
       // console.log('* gasPrice: ', parseInt(tx.gasPrice))
+      // console.log('* value: ', tx.value)
+      // console.log('* chainId: ', chainId)
       const newTx = {
         nonce: new BN(nonce),
         gasPrice: new BN(parseInt(tx.gasPrice) || 5000000000), // default: 5 gwei
@@ -74,6 +76,9 @@ TxRunner.prototype._sendTransaction = function (sendTx, tx, pass, privateKey, ca
         data: new Buffer(tx.data.slice(2), 'hex'),
         chainId: 0
         // chainId: 0x3d  // <= this will give me error.
+      }
+      if (chainId) {
+        newTx.chainId = parseInt(chainId)
       }
       const ethTx = new EthJSTX(newTx)
       ethTx.sign(privateKey)
@@ -98,7 +103,7 @@ TxRunner.prototype.execute = function (args, confirmationCb, gasEstimationForceS
   }
 
   if (!executionContext.isVM()) {
-    self.runInNode(args.from, args.to, data, args.value, args.gasLimit, args.useCall, args.privateKey, confirmationCb, gasEstimationForceSend, promptCb, callback)
+    self.runInNode(args.from, args.to, data, args.value, args.gasLimit, args.useCall, args.chainId, args.privateKey, confirmationCb, gasEstimationForceSend, promptCb, callback)
   } else {
     try {
       self.runInVm(args.from, args.to, data, args.value, args.gasLimit, args.useCall, callback)
@@ -158,7 +163,7 @@ TxRunner.prototype.runInVm = function (from, to, data, value, gasLimit, useCall,
   })
 }
 
-TxRunner.prototype.runInNode = function (from, to, data, value, gasLimit, useCall, privateKey, confirmCb, gasEstimationForceSend, promptCb, callback) {
+TxRunner.prototype.runInNode = function (from, to, data, value, gasLimit, useCall, chainId, privateKey, confirmCb, gasEstimationForceSend, promptCb, callback) {
   const self = this
   var tx = { from: from, to: to, data: data, value: value }
 
@@ -179,7 +184,7 @@ TxRunner.prototype.runInNode = function (from, to, data, value, gasLimit, useCal
       // console.log('@executionContext.web3().eth.estimateGas: ', tx.gas);
 
       if (self._api.config.getUnpersistedProperty('doNotShowTransactionConfirmationAgain')) {
-        return self._executeTx(tx, null, privateKey, self._api, promptCb, callback)
+        return self._executeTx(tx, null, chainId, privateKey, self._api, promptCb, callback)
       }
 
       self._api.detectNetwork((err, network) => {
@@ -189,7 +194,7 @@ TxRunner.prototype.runInNode = function (from, to, data, value, gasLimit, useCal
         }
 
         confirmCb(network, tx, tx.gas, (gasPrice) => {
-          return self._executeTx(tx, gasPrice, privateKey, self._api, promptCb, callback)
+          return self._executeTx(tx, gasPrice, chainId, privateKey, self._api, promptCb, callback)
         }, (error) => {
           callback(error)
         })

@@ -147,6 +147,13 @@ module.exports = class CompileTab {
     self._view.compileToIELE = yo`<input class="${css.autocompile}" onchange=${updateCompileToIELE} id="compileToIELE" type="checkbox" title="Compile to IELE">`
     if (self.data.autoCompile) self._view.autoCompile.setAttribute('checked', '')
     if (self.data.compileToIELE) self._view.compileToIELE.setAttribute('checked', '')
+    /**
+     * TODO: add this back
+          <div class="${css.autocompileContainer}">
+            ${self._view.compileToIELE}
+            <span class="${css.autocompileText}">Compile to IELE</span>
+          </div>
+     */
     self._view.compileContainer = yo`
       <div class="${css.compileContainer}">
         <div class="${css.compileButtons}">
@@ -154,10 +161,6 @@ module.exports = class CompileTab {
           <div class="${css.autocompileContainer}">
             ${self._view.autoCompile}
             <span class="${css.autocompileText}">Auto compile</span>
-          </div>
-          <div class="${css.autocompileContainer}">
-            ${self._view.compileToIELE}
-            <span class="${css.autocompileText}">Compile to IELE</span>
           </div>
           ${self._view.warnCompilationSlow}
         </div>
