@@ -300,7 +300,6 @@ function contractDropdown (events, appAPI, appEvents, opts, self) {
   appEvents.compiler.register('compilationFinished', function (success, data, source) {
     // TODO: @rv support .iele
     toggleRVElements()
-    if (!source.target.endsWith('.sol')) {return;}
     getContractNames(success, data)
     if (success) {
       compFails.style.display = 'none'
@@ -344,15 +343,26 @@ function contractDropdown (events, appAPI, appEvents, opts, self) {
   `
 
   function setInputParamsPlaceHolder () {
+    console.log('@run-tab.js setInputParamsPlaceHolder => ', getSelectedContract().contract)
     createPanel.innerHTML = ''
     if (opts.compiler.getContract && selectContractNames.selectedIndex >= 0 && selectContractNames.children.length > 0) {
-      var ctrabi = txHelper.getConstructorInterface(getSelectedContract().contract.object.abi)
-      var ctrEVMbc = getSelectedContract().contract.object.evm.bytecode.object
-      var createConstructorInstance = new MultiParamManager(0, ctrabi, (valArray, inputsValues) => {
-        createInstance(inputsValues)
-      }, txHelper.inputParametersDeclarationToString(ctrabi.inputs), 'Deploy', ctrEVMbc)
-      createPanel.appendChild(createConstructorInstance.render())
-      return
+      // @rv: support iele bytecode 
+      const contract = getSelectedContract().contract
+      if (contract.object.evm) { // evm
+        var ctrabi = txHelper.getConstructorInterface(contract.object.abi)
+        var ctrEVMbc = contract.object.evm.bytecode.object
+        var createConstructorInstance = new MultiParamManager(0, ctrabi, (valArray, inputsValues) => {
+          createInstance(inputsValues)
+        }, txHelper.inputParametersDeclarationToString(ctrabi.inputs), 'Deploy (EVM)', ctrEVMbc)
+        createPanel.appendChild(createConstructorInstance.render())
+        return
+      } else { // iele vm
+        const ctrabi = txHelper.getConstructorInterface(contract.object.abi) // TODO: <= support getIELEConstructorInterface
+        const ctrIELEVMbc = contract.object.ielevm.bytecode.object
+        const createConstructorInstance = new MultiParamManager(0, ctrabi, (valArray, inputValues)=> {
+          createInstance(inputsValues) // TODO: <= support createIELEInstance
+        }, txHelper.inputParametersDeclarationToString(ctrabi.inputs), 'Deploy (IELE)', ctrIELEVMbc)
+      }
     } else {
       createPanel.innerHTML = 'No compiled contracts'
     }

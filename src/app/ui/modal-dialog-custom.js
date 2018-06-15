@@ -112,7 +112,6 @@ module.exports = {
     const select = importPanel.querySelector('#import-type-select') 
     function selectImportType() {
       const importType = select.value
-      console.log('selectImportType: ', importType)
       if (importType === 'private-key') {
         importPanel.querySelector('#private-key-import').style.display = "block"
         importPanel.querySelector('#json-file-import').style.display = "none"

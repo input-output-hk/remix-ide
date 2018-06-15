@@ -56,6 +56,11 @@ class ContextualListener {
   }
 
   _highlightItems (cursorPosition, compilationResult, file) {
+    // TODO: @rv: support .iele
+    if (file.endsWith('.iele')) {
+      return
+    }
+
     if (this.currentPosition === cursorPosition) return
     if (this.currentFile !== file) {
       this.currentFile = file

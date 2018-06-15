@@ -314,11 +314,11 @@ UniversalDApp.prototype.runTx = function (args, cb) {
     function unlockAccount (address, value, gasLimit, next) {
       function _getPrivateKey(keystore, password) {
         keythereum.recover(password, keystore, (privateKey)=> {
-          if (privateKey.toString('hex').length !== 64) { // Invalid privateKey
+          privateKey = privateKey.toString('hex').replace(/^00/, '') // Hack: empty password bug.
+          if (isNaN('0x' + privateKey)) { // Invalid privateKey
             const error = privateKey
             return next(error)
           } else {
-            privateKey = privateKey.toString('hex')
             executionContext.saveAddressAndPassword(address, password) // So user doesn't have to unlock again.
             return next(null, address, value, gasLimit, privateKey)
           }
@@ -486,11 +486,11 @@ UniversalDApp.prototype.exportPrivateKey = function(address, cb) {
       const crypto = keystore.crypto
       try {
         keythereum.recover(password, keystore, (privateKey)=> { // TODO: I think I should submit a pull request to `keythereum`. The design of this callback function is really bad.
-          if (privateKey.toString('hex').length !== 64) { // Invalid privateKey
+          privateKey = privateKey.toString('hex') 
+          if (isNaN('0x' + privateKey)) { // Invalid privateKey  
             const error = privateKey
             return cb(error)
           }
-          privateKey = privateKey.toString('hex')  // recover private key
           const element = document.createElement('a');
           element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(privateKey));
           element.setAttribute('download', `privateKey_${address}_${(new Date())}`);      
@@ -559,7 +559,8 @@ UniversalDApp.prototype.importAccount = function(cb) {
       try {
         keystore = JSON.parse(keystore)
         keythereum.recover(password, keystore, (privateKey)=> { // Check if the password is valid
-          if (privateKey.toString('hex').length !== 64) { // Invalid privateKey
+          privateKey = privateKey.toString('hex')
+          if (isNaN('0x' + privateKey)) { // Invalid privateKey
             const error = privateKey
             return cb(error)
           } else {
