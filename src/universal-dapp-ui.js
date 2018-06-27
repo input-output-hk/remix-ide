@@ -34,7 +34,11 @@ UniversalDAppUI.prototype.renderInstance = function (contract, address, contract
 // this will render an instance: contract name, contract address, and all the public functions
 // basically this has to be called for the "atAddress" (line 393) and when a contract creation succeed
 // this returns a DOM element
-UniversalDAppUI.prototype.renderInstanceFromABI = function (contractABI, address, contractName) {
+UniversalDAppUI.prototype.renderInstanceFromABI = function (contractABI, address, contractName) { // TODO: support IELE
+  // console.log('@universal-dapp-ui.js UniversalDAppUI.prototype.renderInstanceFromABI')
+  // console.log('* contractABI: ', contractABI)
+  // console.log('* address: ', address)
+  // console.log('* contractName: ', contractName)
   var self = this
   address = (address.slice(0, 2) === '0x' ? '' : '0x') + address.toString('hex')
   var instance = yo`<div class="instance ${css.instance} ${css.hidesub}" id="instance${address}"></div>`
@@ -74,6 +78,9 @@ UniversalDAppUI.prototype.renderInstanceFromABI = function (contractABI, address
     }))
   }
 
+  // check if the source language is iele
+  let isIeleLanguage = !!(contractABI.filter((x)=> x.type === 'constructor' && x.name === 'init').length)
+
   $.each(contractABI, (i, funABI) => {
     if (funABI.type !== 'function') {
       return
@@ -83,7 +90,9 @@ UniversalDAppUI.prototype.renderInstanceFromABI = function (contractABI, address
       funABI: funABI,
       address: address,
       contractAbi: contractABI,
-      contractName: contractName
+      contractName: contractName,
+      isIeleLanguage,
+      sourceLanguage: isIeleLanguage ? 'iele' : 'solidity'
     }))
   })
 
@@ -92,29 +101,53 @@ UniversalDAppUI.prototype.renderInstanceFromABI = function (contractABI, address
 
 // TODO this is used by renderInstance when a new instance is displayed.
 // this returns a DOM element.
+/**
+ * @rv: modify this function to support IELE function
+ * @param {{funABI:object, address: string, contractAbi: string, contractName: string, isIeleLanguage: boolean}} args
+ */
 UniversalDAppUI.prototype.getCallButton = function (args) {
-  var self = this
+  // console.log('@universal-dapp-ui.js UniversalDAppUI.prototype.getCallButton')
+  // console.log('* args: ', args)
+  const isIeleLanguage = args.isIeleLanguage
+  const self = this
   // args.funABI, args.address [fun only]
   // args.contractName [constr only]
-  var lookupOnly = args.funABI.constant
-
-  var outputOverride = yo`<div class=${css.value}></div>` // show return value
-
-  function clickButton (valArr, inputsValues) {
-    self.udapp.call(true, args, inputsValues, lookupOnly, (decoded) => {
-      outputOverride.innerHTML = ''
-      outputOverride.appendChild(decoded)
-    })
+  function helper(lookupOnly) {  
+    var outputOverride = yo`<div class=${css.value}></div>` // show return value
+  
+    function clickButton (valArr, inputsValues) {
+      const newArgs = Object.assign({}, args)
+      // @rv: attach `constant` to funABI if isIeleLanguage and lookupOnly
+      if (isIeleLanguage) {
+        const newFunABI = Object.assign({}, args.funABI)
+        newFunABI.constant = lookupOnly
+        newArgs.funABI = newFunABI
+      }
+      self.udapp.call(true, newArgs, inputsValues, lookupOnly, (decoded) => {
+        outputOverride.innerHTML = ''
+        outputOverride.appendChild(decoded)
+      })
+    }
+  
+    const multiParamManager = new MultiParamManager(lookupOnly, args.funABI, (valArray, inputsValues, domEl) => {
+      clickButton(valArray, inputsValues, domEl)
+    }, self.udapp.getInputs(args.funABI), '')
+  
+    const contractActionsContainer = yo`<div class="${css.contractActionsContainer}" >${multiParamManager.render()}</div>`
+    contractActionsContainer.appendChild(outputOverride)
+  
+    return contractActionsContainer 
   }
 
-  var multiParamManager = new MultiParamManager(lookupOnly, args.funABI, (valArray, inputsValues, domEl) => {
-    clickButton(valArray, inputsValues, domEl)
-  }, self.udapp.getInputs(args.funABI))
-
-  var contractActionsContainer = yo`<div class="${css.contractActionsContainer}" >${multiParamManager.render()}</div>`
-  contractActionsContainer.appendChild(outputOverride)
-
-  return contractActionsContainer
+  if (isIeleLanguage) { // @rv: display both `call` and `transact` for function.
+    return yo`<div>
+    ${helper(true)}
+    ${helper(false)}
+    </div>`
+  } else {
+    const lookupOnly = args.funABI.constant
+    return helper(lookupOnly)
+  }
 }
 
 module.exports = UniversalDAppUI

@@ -18,7 +18,7 @@ class ContextualListener {
     this._activeHighlights = []
 
     events.compiler.register('compilationFinished', (success, data, source) => {
-      console.log('@contextualListener.js compilationFinished:\n', success, data, source)
+      // console.log('@contextualListener.js compilationFinished:\n', success, data, source)
       // TODO: @rv add .iele support
       if (!source.target.endsWith('.sol')) { return; }
       this._stopHighlighting()

@@ -85,7 +85,7 @@ module.exports = class PluginManager {
     self.inFocus
     self.allowedapi = {'setConfig': 1, 'getConfig': 1, 'removeConfig': 1}
     self._events.compiler.register('compilationFinished', (success, data, source) => {
-      console.log('@pluginManager.js compilationFinished:\n', success, data, source)
+      // console.log('@pluginManager.js compilationFinished:\n', success, data, source)
       if (self.inFocus) {
         // trigger to the current focus
         self.post(self.inFocus, JSON.stringify({

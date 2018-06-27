@@ -8,7 +8,7 @@ module.exports = (contractName, contract, compiledSource) => {
 }
 
 var getDetails = function (contractName, contract, source) {
-  console.log('@contractParser.js getDetails: ', contractName, contract, source)
+  // console.log('@contractParser.js getDetails: ', contractName, contract, source)
   var detail = {}
   detail.name = contractName
   detail.metadata = contract.metadata
@@ -30,9 +30,9 @@ var getDetails = function (contractName, contract, source) {
     }
   } else if (contract.ielevm && contract.ielevm.bytecode.object) {
     detail.bytecode = contract.ielevm.bytecode
-    detail.web3Deploy = 'to be implemented'
-    detail.metadataHash = 'to be implemented'
-    detail.swarmLocation = 'to be implemented'
+    // detail.web3Deploy = 'to be implemented'
+    // detail.metadataHash = 'to be implemented'
+    // detail.swarmLocation = 'to be implemented'
   }
 
   detail.functionHashes = {}
@@ -41,16 +41,14 @@ var getDetails = function (contractName, contract, source) {
       detail.functionHashes[contract.evm.methodIdentifiers[fun]] = fun
     }
   }
-  // TODO: support function hashes for IELE
 
   if (contract.evm) {
     detail.gasEstimates = formatGasEstimates(contract.evm.gasEstimates)
+    detail.devdoc = contract.devdoc
+    detail.userdoc = contract.userdoc
   } else {
-    detail.gasEstimates = formatGasEstimates(contract.ielevm.gasEstimates)
+    // detail.gasEstimates = formatGasEstimates(contract.ielevm.gasEstimates)
   }
-
-  detail.devdoc = contract.devdoc
-  detail.userdoc = contract.userdoc
 
   if (contract.evm && contract.evm.deployedBytecode && contract.evm.deployedBytecode.object.length > 0) {
     detail['Runtime Bytecode'] = contract.evm.deployedBytecode
@@ -58,6 +56,8 @@ var getDetails = function (contractName, contract, source) {
 
   if (source && contract.assembly !== null && contract.evm) {
     detail['Assembly'] = formatAssemblyText(contract.evm.legacyAssembly, '', source.content)
+  } else if (source && contract.ielevm && contract.ielevm.ieleAssembly) {
+    detail['IeleAssembly'] = contract.ielevm.ieleAssembly
   }
 
   return detail

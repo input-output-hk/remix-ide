@@ -22,6 +22,7 @@ var txListener = require('./src/execution/txListener')
 var txRunner = require('./src/execution/txRunner')
 var executionContext = require('./src/execution/execution-context')
 var typeConversion = require('./src/execution/typeConversion')
+const ieleTranslator = require('./src/execution/ieleTranslator') // @rv
 
 if (typeof (module) !== 'undefined' && typeof (module.exports) !== 'undefined') {
   module.exports = modules()
@@ -59,7 +60,8 @@ function modules () {
       txFormat: txFormat,
       txListener: txListener,
       txRunner: txRunner,
-      typeConversion: typeConversion
+      typeConversion: typeConversion,
+      ieleTranslator: ieleTranslator,
     }
   }
 }

@@ -26,31 +26,36 @@ class Recorder {
     })
 
     opts.events.udapp.register('initiatingTransaction', (timestamp, tx, payLoad) => {
+      // console.log('@recorder.js initiatingTransaction!!')
       if (tx.useCall) return
       var { from, to, value } = tx
-
+      // console.log('-- this.data._listen = ', this.data._listen)
       // convert to and from to tokens
       if (this.data._listen) {
-        var record = { value, parameters: payLoad.funArgs }
+        const record = { value, parameters: payLoad.funArgs }
         if (!to) {
-          var selectedContract = compiler.getContract(payLoad.contractName)
+          const selectedContract = compiler.getContract(payLoad.contractName)
           if (selectedContract) {
-            var abi = selectedContract.object.abi
-            var sha3 = ethutil.bufferToHex(ethutil.sha3(abi))
-            record.abi = sha3
-            record.contractName = payLoad.contractName
-            record.bytecode = payLoad.contractBytecode
-            record.linkReferences = selectedContract.object.evm.bytecode.linkReferences
-            if (record.linkReferences && Object.keys(record.linkReferences).length) {
-              for (var file in record.linkReferences) {
-                for (var lib in record.linkReferences[file]) {
-                  self.data._linkReferences[lib] = '<address>'
+            const abi = selectedContract.object.abi
+            const isIele = selectedContract.object.ielevm // @rv: check iele
+            // console.log('-- isIele: ', isIele) 
+            if (!isIele) { // TODO: <= support iele for record here.
+              const sha3 = ethutil.bufferToHex(ethutil.sha3(abi))
+              record.abi = sha3
+              record.contractName = payLoad.contractName
+              record.bytecode = payLoad.contractBytecode
+              record.linkReferences = selectedContract.object.evm.bytecode.linkReferences
+              if (record.linkReferences && Object.keys(record.linkReferences).length) {
+                for (var file in record.linkReferences) {
+                  for (var lib in record.linkReferences[file]) {
+                    self.data._linkReferences[lib] = '<address>'
+                  }
                 }
               }
-            }
-            self.data._abis[sha3] = abi
+              self.data._abis[sha3] = abi
 
-            this.data._contractABIReferences[timestamp] = sha3
+              this.data._contractABIReferences[timestamp] = sha3
+            }
           }
         } else {
           var creationTimestamp = this.data._createdContracts[to]
@@ -60,6 +65,8 @@ class Recorder {
 
         record.name = payLoad.funAbi.name
         record.type = payLoad.funAbi.type
+
+        // console.log('### ENTER HERE 1')
 
         udapp.getAccounts((error, accounts) => {
           if (error) return console.log(error)
@@ -235,6 +242,7 @@ class Recorder {
           return
         }
       }
+      // TODO: support iele
       var data = format.encodeData(fnABI, tx.record.parameters, tx.record.bytecode)
       if (data.error) {
         modal.alert(data.error + '. Record:' + JSON.stringify(record, null, '\t') + '. Execution stopped at ' + index)

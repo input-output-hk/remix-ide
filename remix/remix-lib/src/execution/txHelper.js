@@ -1,5 +1,6 @@
 'use strict'
 var ethers = require('ethers')
+const ieleTranslator = require('./ieleTranslator')
 
 module.exports = {
   makeFullTupleTypeDefinition: function (typeDef) {
@@ -10,22 +11,53 @@ module.exports = {
     return typeDef.type
   },
 
-  encodeParams: function (funABI, args) {
-    var types = []
-    if (funABI.inputs && funABI.inputs.length) {
-      for (var i = 0; i < funABI.inputs.length; i++) {
-        var type = funABI.inputs[i].type
-        types.push(type === 'tuple' ? this.makeFullTupleTypeDefinition(funABI.inputs[i]) : type)
-        if (args.length < types.length) {
-          args.push('')
+  /**
+   * @rv: Modify encodeParams to support iele.
+   * @param {{name: string, inputs: {name: string, type: string}[]}} funABI
+   * @param {any[]} args 
+   * @param {string} sourceLanguage
+   * @param {string} vm
+   * @return {string[]|string} if isIele, returns string[], else returns string
+   */
+  encodeParams: function (funABI, args, sourceLanguage, vm) {
+    // console.log('@txHelper.js encodeParams')
+    // console.log('* funABI: ', funABI)
+    // console.log('* args: ', args)
+    // console.log('* sourceLanguage: ', sourceLanguage)
+    // console.log('* vm: ', vm)
+    if (vm === 'ielevm') {
+      if (sourceLanguage === 'iele') {
+        return args.map((x)=> {
+          if (x.startsWith('0x')) {
+            return x
+          } else if (!isNaN(x)) {
+            return '0x' + parseInt(x).toString('hex')
+          } else {
+            return '0x' + x
+          }
+        })
+      } else { // solidity
+        return args.map((x, i)=> {
+          return ieleTranslator.encode(x, funABI.inputs[i]) 
+        })
+      }
+    } else { // evm && solidity
+      var types = []
+      if (funABI.inputs && funABI.inputs.length) {
+        for (var i = 0; i < funABI.inputs.length; i++) {
+          var type = funABI.inputs[i].type
+          types.push(type === 'tuple' ? this.makeFullTupleTypeDefinition(funABI.inputs[i]) : type)
+          if (args.length < types.length) {
+            args.push('')
+          }
         }
       }
+  
+      // NOTE: the caller will concatenate the bytecode and this
+      //       it could be done here too for consistency
+      var abiCoder = new ethers.utils.AbiCoder()
+      return abiCoder.encode(types, args)
     }
-
-    // NOTE: the caller will concatenate the bytecode and this
-    //       it could be done here too for consistency
-    var abiCoder = new ethers.utils.AbiCoder()
-    return abiCoder.encode(types, args)
   },
 
   encodeFunctionId: function (funABI) {
@@ -76,6 +108,19 @@ module.exports = {
     return funABI
   },
 
+  getConstructorInterfaceForIELE: function(abi) {
+    const constructorAbi = abi.filter((x)=> x.type === 'constructor')[0]
+    if (!constructorAbi) {
+      return {
+        name: 'init',
+        inputs: [],
+        type: 'constructor'
+      }
+    } else {
+      return constructorAbi
+    }
+  },
+
   getFunction: function (abi, fnName) {
     for (var i = 0; i < abi.length; i++) {
       if (abi[i].name === fnName) {
@@ -122,7 +167,8 @@ module.exports = {
   },
 
   inputParametersDeclarationToString: function (abiinputs) {
-    var inputs = (abiinputs || []).map((inp) => inp.type + ' ' + inp.name)
+    // @rv: set inp.type default value to ''
+    var inputs = (abiinputs || []).map((inp) => (inp.type || '') + ' ' + inp.name)
     return inputs.join(', ')
   }
 

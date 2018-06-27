@@ -8,6 +8,10 @@ var codeUtil = require('../util')
 var executionContext = require('./execution-context')
 var txFormat = require('./txFormat')
 var txHelper = require('./txHelper')
+const ieleTranslator = require('./ieleTranslator')
+
+const RLP = require('rlp')
+window['RLP'] = RLP
 
 /**
   * poll web3 each 2s if web3
@@ -33,7 +37,19 @@ class TxListener {
       }
     })
 
-    opt.event.udapp.register('callExecuted', (error, from, to, data, lookupOnly, txResult) => {
+    opt.event.udapp.register('callExecuted', (error, from, to, data, lookupOnly, txResult, timestamp, payload, contract) => {
+      //console.log('@txListener.js callExecuted event')
+      //console.log('* error: ', error)
+      //console.log('* from: ', from)
+      //console.log('* to: ', to)
+      //console.log('* data: ', data)
+      //console.log('* lookupOnly: ', lookupOnly)
+      //console.log('* txResult: ', txResult)
+      //console.log('* timestamp: ', timestamp)
+      //console.log('* payload: ', payload)
+      //console.log('* contract: ', contract)
+      //window['txResult'] = txResult
+
       if (error) return
       // we go for that case if
       // in VM mode
@@ -41,13 +57,25 @@ class TxListener {
       if (!this._isListening) return // we don't listen
       if (this._loopId && executionContext.getProvider() !== 'vm') return // we seems to already listen on a "web3" network
 
-      var call = {
+      let returnValue
+      if (executionContext.isVM()) {
+        returnValue = txResult.result.vm.return
+      } else if (contract.vm === 'ielevm') { // iele vm
+        returnValue = RLP.decode(txResult.result).map(x=>x.toString('hex'))
+        if (contract.sourceLanguage === 'solidity') { // solidity language
+          returnValue = returnValue.map((val, i)=> ieleTranslator.decode(val, payload.funAbi.outputs[i]).stringResult)
+        } else { // iele language
+        }
+      } else { // evm
+        returnValue = ethJSUtil.toBuffer(txResult.result)
+      }
+      const call = {
         from: from,
         to: to,
         input: data,
         hash: txResult.transactionHash ? txResult.transactionHash : 'call' + (from || '') + to + data,
         isCall: true,
-        returnValue: executionContext.isVM() ? txResult.result.vm.return : ethJSUtil.toBuffer(txResult.result),
+        returnValue,
         envMode: executionContext.getProvider()
       }
 
@@ -217,14 +245,20 @@ class TxListener {
     var contracts = this._api.contracts()
     if (!contracts) return cb()
     var contractName
+    // console.log('@txListener.js _resolveTx')
+    // console.log('* tx: ', tx)
     if (!tx.to || tx.to === '0x0') { // testrpc returns 0x0 in that case
       // contract creation / resolve using the creation bytes code
       // if web3: we have to call getTransactionReceipt to get the created address
       // if VM: created address already included
       var code = tx.input
       contractName = this._tryResolveContract(code, contracts, true)
+      // console.log('* 1 contractName: ', contractName)
+      // console.log('* 1 this._resolvedContracts: ', this._resolvedContracts)
       if (contractName) {
         this._api.resolveReceipt(tx, (error, receipt) => {
+          // console.log('- this._api.resolveReceipt')
+          // console.log('- * receipt, ', receipt)
           if (error) return cb(error)
           var address = receipt.contractAddress
           this._resolvedContracts[address] = contractName
@@ -240,6 +274,8 @@ class TxListener {
     } else {
       // first check known contract, resolve against the `runtimeBytecode` if not known
       contractName = this._resolvedContracts[tx.to]
+      // console.log('* 2 contractName: ', contractName)
+      // console.log('* 2 this._resolvedContracts: ', this._resolvedContracts)
       if (!contractName) {
         executionContext.web3().eth.getCode(tx.to, (error, code) => {
           if (error) return cb(error)
@@ -264,62 +300,118 @@ class TxListener {
   }
 
   _resolveFunction (contractName, compiledContracts, tx, isCtor) {
-    var contract = txHelper.getContract(contractName, compiledContracts)
+    // console.log('@txListener.js _resolveFunction')
+    // console.log('* contractName: ', contractName)
+    // console.log('* compiledContracts: ', compiledContracts)
+    // console.log('* tx: ', tx)
+    // console.log('* isCtor: ', isCtor)
+    const contract = txHelper.getContract(contractName, compiledContracts)
     if (!contract) {
       console.log('txListener: cannot resolve ' + contractName)
       return
     }
-    var abi = contract.object.abi
-    var inputData = tx.input.replace('0x', '')
-    if (!isCtor) {
-      var methodIdentifiers = contract.object.evm.methodIdentifiers
-      for (var fn in methodIdentifiers) {
-        if (methodIdentifiers[fn] === inputData.substring(0, 8)) {
-          var fnabi = getFunction(abi, fn)
-          this._resolvedTransactions[tx.hash] = {
-            contractName: contractName,
-            to: tx.to,
-            fn: fn,
-            params: this._decodeInputParams(inputData.substring(8), fnabi)
+    const isIeleVM = !!(contract.object.vm === 'ielevm')
+    const abi = contract.object.abi
+    const inputData = tx.input.replace('0x', '')
+    // console.log('* isIeleVM: ', isIeleVM)
+    // console.log('* abi: ', abi)
+    // console.log('* inputData: ', inputData)
+    if (!isCtor) { // TODO: check this for IELE
+      if (isIeleVM) {
+        const decoded = RLP.decode('0x' + inputData)
+        // console.log('* !isCtor -> isIeleVM => decoded: ', decoded)
+        const targetMethodIdentifier = decoded[0].toString()
+        const params = decoded[1]
+        this._resolvedTransactions[tx.hash] = {
+          contractName: contractName,
+          to: tx.to,
+          fn: targetMethodIdentifier,
+          params
+        }
+        if (tx.returnValue) {
+          this._resolvedTransactions[tx.hash].decodedReturnValue = tx.returnValue
+        }
+        return this._resolvedTransactions[tx.hash]
+      } else {
+        var methodIdentifiers = contract.object.evm.methodIdentifiers
+        for (var fn in methodIdentifiers) {
+          if (methodIdentifiers[fn] === inputData.substring(0, 8)) {
+            var fnabi = getFunction(abi, fn)
+            this._resolvedTransactions[tx.hash] = {
+              contractName: contractName,
+              to: tx.to,
+              fn: fn,
+              params: this._decodeInputParams(inputData.substring(8), fnabi)
+            }
+            if (tx.returnValue) {
+              this._resolvedTransactions[tx.hash].decodedReturnValue = txFormat.decodeResponse(tx.returnValue, fnabi)
+            }
+            return this._resolvedTransactions[tx.hash]
           }
-          if (tx.returnValue) {
-            this._resolvedTransactions[tx.hash].decodedReturnValue = txFormat.decodeResponse(tx.returnValue, fnabi)
-          }
-          return this._resolvedTransactions[tx.hash]
+        }
+        // fallback function
+        this._resolvedTransactions[tx.hash] = {
+          contractName: contractName,
+          to: tx.to,
+          fn: '(fallback)',
+          params: null
         }
       }
-      // fallback function
-      this._resolvedTransactions[tx.hash] = {
-        contractName: contractName,
-        to: tx.to,
-        fn: '(fallback)',
-        params: null
-      }
     } else {
-      var bytecode = contract.object.evm.bytecode.object
-      var params = null
-      if (bytecode && bytecode.length) {
-        params = this._decodeInputParams(inputData.substring(bytecode.length), getConstructorInterface(abi))
-      }
-      this._resolvedTransactions[tx.hash] = {
-        contractName: contractName,
-        to: null,
-        fn: '(constructor)',
-        params: params
+      if (isIeleVM) {
+        const bytecode = contract.object.ielevm.bytecode.object 
+        this._resolvedTransactions[tx.hash] = {
+          contractName,
+          to: null,
+          fn: '(constructor)',
+          params: contract.object.ielevm.abi.filter(x=> x.type === 'constructor')[0].inputs
+        }
+      } else {
+        var bytecode = contract.object.evm.bytecode.object
+        var params = null
+        if (bytecode && bytecode.length) {
+          params = this._decodeInputParams(inputData.substring(bytecode.length), getConstructorInterface(abi))
+        }
+        this._resolvedTransactions[tx.hash] = {
+          contractName: contractName,
+          to: null,
+          fn: '(constructor)',
+          params: params
+        }
       }
     }
     return this._resolvedTransactions[tx.hash]
   }
 
   _tryResolveContract (codeToResolve, compiledContracts, isCreation) {
+    // console.log('@txListener.js _tryResolveContract')
+    // console.log('* codeToResolve: ', codeToResolve)
+    // console.log('* compiledContracts: ', compiledContracts)
+    // console.log('* isCreation: ', isCreation)
     var found = null
     txHelper.visitContracts(compiledContracts, (contract) => {
-      var bytes = isCreation ? contract.object.evm.bytecode.object : contract.object.evm.deployedBytecode.object
+      // console.log('- contract: ', contract)
+      const isIeleVM = contract.object.vm === 'ielevm'
+      // console.log('- isIeleVM: ', isIeleVM)
+      let bytes 
+      if (isIeleVM) {
+        bytes = contract.object.ielevm.bytecode.object.toLowerCase()
+        codeToResolve = codeToResolve.toLowerCase()
+        if (isCreation) { // constructor
+          codeToResolve = '0x' + RLP.decode(codeToResolve)[0].toString('hex')
+        }
+        // console.log('- codeToResolve: ', codeToResolve)
+        // console.log('- bytes: ', bytes)
+      } else {
+        bytes = isCreation ? contract.object.evm.bytecode.object : contract.object.evm.deployedBytecode.object
+      }
       if (codeUtil.compareByteCode(codeToResolve, '0x' + bytes)) {
         found = contract.name
+        // console.log('* found: ', found)
         return true
       }
     })
+    // console.log('* found: ', found)
     return found
   }
 

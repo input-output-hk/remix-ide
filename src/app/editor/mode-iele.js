@@ -24,7 +24,7 @@ ace.define('ace/mode/iele', ['require', 'exports', 'module', 'ace/lib/oop', 'ace
       'keyword': 'ret revert br at load store sload sstore ' +
         'log create copycreate selfdestruct deposit init send gaslimit ' +
         'iszero not add sub mul div exp mod addmod mulmod expmod ' +
-        'byte sext twos ' +
+        'byte sext twos bswap ' +
         'and or xor shift cmp lt le gt ge eq ne sha3 ' +
         'external contract define public ' +
         'call staticcall',

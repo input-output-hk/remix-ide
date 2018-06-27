@@ -2,6 +2,7 @@
 var ethJSUtil = require('ethereumjs-util')
 var ethers = require('ethers')
 var txHelper = require('./txHelper')
+const ieleTranslator = require('./ieleTranslator')
 
 /**
   * Register to txListener and extract events
@@ -34,15 +35,34 @@ class EventsDecoder {
     if (!receipt.logs) {
       return cb(null, { decoded: [], raw: [] })
     }
+    // console.log('@eventsDecoder.js _decodeLogs')
+    // console.log('* tx: ', tx)
+    // console.log('* receipt: ', receipt)
+    // console.log('* contract: ', contract)
+    // console.log('* contracts: ', contracts)
+
     this._decodeEvents(tx, receipt.logs, contract, contracts, cb)
   }
 
   _eventABI (contract) {
+    // TODO: @rv: support event log for IELE language
+    // console.log('@eventsDecoder.js _eventABI')
+    // console.log('* contract: ', contract)
+    if (contract.sourceLanguage === 'iele') {
+       return {}
+    }
+    
     var eventABI = {}
     var abi = new ethers.Interface(contract.abi)
     for (var e in abi.events) {
       var event = abi.events[e]
-      eventABI[ethJSUtil.sha3(new Buffer(event.signature)).toString('hex')] = { event: event.name, inputs: event.inputs, object: event }
+      eventABI[ethJSUtil.sha3(new Buffer(event.signature)).toString('hex')] = { 
+        event: event.name, 
+        inputs: event.inputs, 
+        object: event, 
+        vm: contract.vm,  // @rv
+        sourceLanguage: contract.sourceLanguage 
+      }
     }
     return eventABI
   }
@@ -65,7 +85,9 @@ class EventsDecoder {
   }
 
   _decodeEvents (tx, logs, contractName, compiledContracts, cb) {
+    // console.log('@eventsDecoder.js _decodeEvents')
     var eventsABI = this._eventsABI(compiledContracts)
+    // console.log('* eventsABI: ', eventsABI)
     var events = []
     for (var i in logs) {
       // [address, topics, mem]
@@ -73,7 +95,43 @@ class EventsDecoder {
       var topicId = log.topics[0]
       var abi = this._event(topicId.replace('0x', ''), eventsABI)
       if (abi) {
-        events.push({ from: log.address, topic: topicId, event: abi.event, args: abi.object.parse(log.topics, log.data) })
+        // console.log('* i: ', i)
+        // console.log('* abi: ', abi)
+        // console.log('* log: ', log)
+        if (abi.vm === 'ielevm') {
+          if (abi.sourceLanguage === 'solidity') {
+            let data = log.data.replace(/^0x/, '')
+            if (data.length %2 !== 0) { data = '0' + data }
+            let flippedData = ''
+            // flip data
+            for (let i = 0; i < data.length; i += 2) {
+              flippedData = data[i] + data[i + 1] + flippedData
+            }
+            let type = null
+            if (abi.inputs.types.length > 1) {
+              type = {
+                type: 'tuple',
+                components: abi.inputs.types.map((t)=> {return {type: t}})
+              }
+            } else if (abi.inputs.types.length === 1) {
+              type = {
+                type: abi.inputs.types[0]
+              }
+            }
+            console.log('- flippedData: ', flippedData)
+            console.log('- type: ', type)
+            if (type) {
+              const stringResult = ieleTranslator.decode(flippedData, type).stringResult
+              console.log('- stringResult: ', stringResult)
+              events.push({ from: log.address, topic: topicId, event: abi.event, args: stringResult })
+            }
+          } 
+          // else {
+          //   events.push({ from: log.address, topic: topicId, event: abi.event, data: log.data})
+          // }
+        } else { // evm & solidity
+          events.push({ from: log.address, topic: topicId, event: abi.event, args: abi.object.parse(log.topics, log.data) })
+        }
       } else {
         events.push({ from: log.address, data: log.data, topics: log.topics })
       }

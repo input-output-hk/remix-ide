@@ -16,7 +16,7 @@ Remix consists of many modules and in this repository you will find the Remix ID
 
 > Difference: We include `remix` repository directly in this repository.
 
-Install **npm** and **node.js** (see https://docs.npmjs.com/getting-started/installing-node), then do:
+Install **npm** and **node.js** (Recommended to use `LTS` version) (see https://docs.npmjs.com/getting-started/installing-node), then do:
 
 ```bash
 git clone https://github.com/ethereum/remix-ide.git

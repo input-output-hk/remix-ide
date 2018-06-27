@@ -176,7 +176,13 @@ UniversalDApp.prototype.pendingTransactions = function () {
 }
 
 UniversalDApp.prototype.call = function (isUserAction, args, value, lookupOnly, outputCb) {
+  // console.log('@universal-dapp.js UniversalDApp.prototype.call')
+  // console.log('* isUserAction: ', isUserAction)
+  // console.log('* args: ', args)
+  // console.log('* value: ', value)
+  // console.log('* lookupOnly: ', lookupOnly)
   const self = this
+  const isIeleVM = executionContext.isIeleVM()
   var logMsg
   if (isUserAction) {
     if (!args.funABI.constant) {
@@ -185,7 +191,12 @@ UniversalDApp.prototype.call = function (isUserAction, args, value, lookupOnly, 
       logMsg = `call to ${args.contractName}.${(args.funABI.name) ? args.funABI.name : '(fallback)'}`
     }
   }
-  txFormat.buildData(args.contractName, args.contractAbi, self.contracts, false, args.funABI, value, (error, data) => {
+  const contract = {
+    sourceLanguage: args.sourceLanguage,
+    vm: isIeleVM ? 'ielevm' : 'evm',
+  }
+  // TODO: @rv: support IELE
+  txFormat.buildData(args.contractName, contract, self.contracts, false, args.funABI, value, (error, data) => {
     if (!error) {
       if (isUserAction) {
         if (!args.funABI.constant) {
@@ -205,8 +216,39 @@ UniversalDApp.prototype.call = function (isUserAction, args, value, lookupOnly, 
             }
           }
           if (lookupOnly) {
-            var decoded = uiUtil.decodeResponseToTreeView(executionContext.isVM() ? txResult.result.vm.return : ethJSUtil.toBuffer(txResult.result), args.funABI)
-            outputCb(decoded)
+            if (isIeleVM) {
+              const returnValue = RLP.decode(txResult.result).map(x=> '0x'+x.toString('hex'))
+              // console.log('@universal-dapp.js UniversalDApp.prototype.call => returnValue: ', returnValue)
+              if (args.sourceLanguage === 'solidity') { // solidity language
+                // decode results for solidity
+                const ieleTranslator = remixLib.execution.ieleTranslator 
+                const results = returnValue.map((val, i)=> ieleTranslator.decode(val, args.funABI.outputs[i]).stringResult )
+                const resultElement = document.createElement('ul')
+                results.forEach((result, i)=> {
+                  const liElement = document.createElement('li')
+                  liElement.innerText = `${i}: ${args.funABI.outputs[i].type}: ${args.funABI.outputs[i].name} ${result}`
+                  liElement.style.listStyle = 'none'
+                  liElement.style.marginLeft = '12px'
+                  liElement.style.textAlign = 'left'
+                  resultElement.appendChild(liElement)
+                })
+                return outputCb(resultElement)
+              } else { // iele language
+                const resultElement = document.createElement('ul')
+                returnValue.forEach((result, i)=> {
+                  const liElement = document.createElement('li')
+                  liElement.innerText = result
+                  liElement.style.listStyle = 'none'
+                  liElement.style.marginLeft = '12px'
+                  liElement.style.textAlign = 'left'
+                  resultElement.appendChild(liElement)
+                })
+                return outputCb(resultElement)
+              }
+            } else {
+              var decoded = uiUtil.decodeResponseToTreeView((executionContext.isVM() ? txResult.result.vm.return : ethJSUtil.toBuffer(txResult.result)), args.funABI)
+              return outputCb(decoded)
+            }
           }
         } else {
           self._api.logMessage(`${logMsg} errored: ${error} `)
@@ -226,8 +268,8 @@ UniversalDApp.prototype.call = function (isUserAction, args, value, lookupOnly, 
 /**
   * deploy the given contract
   *
-  * @param {String} data    - data to send with the transaction ( return of txFormat.buildData(...) ).
-  * @param {Function} callback    - callback.
+  * @param {{dataHex: string, funAbi: object, funArgs: string[], contractByteCode: string, contractName: string, contract: object}} data    - data to send with the transaction ( return of txFormat.buildData(...) ).
+  * @param {function} callback    - callback.
   */
 UniversalDApp.prototype.createContract = function (data, callback) {
   this.runTx({data: data, useCall: false}, (error, txResult) => {
@@ -239,10 +281,10 @@ UniversalDApp.prototype.createContract = function (data, callback) {
 /**
   * call the current given contract
   *
-  * @param {String} to    - address of the contract to call.
-  * @param {String} data    - data to send with the transaction ( return of txFormat.buildData(...) ).
-  * @param {Object} funAbi    - abi definition of the function to call.
-  * @param {Function} callback    - callback.
+  * @param {string} to    - address of the contract to call.
+  * @param {{dataHex: string, funAbi: object, funArgs: string[], contractByteCode: string, contractName: string, contract: object}} data    - data to send with the transaction ( return of txFormat.buildData(...) ).
+  * @param {object} funAbi    - abi definition of the function to call.
+  * @param {function} callback    - callback.
   */
 UniversalDApp.prototype.callFunction = function (to, data, funAbi, callback) {
   this.runTx({to: to, data: data, useCall: funAbi.constant}, (error, txResult) => {
@@ -270,14 +312,19 @@ UniversalDApp.prototype.getInputs = function (funABI) {
   return txHelper.inputParametersDeclarationToString(funABI.inputs)
 }
 
+/**
+ * @param {{useCall: boolean, value:string, data: {dataHex:string, funAbi:object, funArgs:string[], contractByteCode: string, contractName: string, contract: object}, to?:string}} args
+ * @param {function} cb
+ */
 UniversalDApp.prototype.runTx = function (args, cb) {
   const self = this
   async.waterfall([
     function getGasLimit (next) {
       if (self.transactionContextAPI.getGasLimit) {
         return self.transactionContextAPI.getGasLimit(next)
+      } else {
+        return next(null, 3000000)
       }
-      next(null, 3000000)
     },
     function queryValue (gasLimit, next) {
       if (args.value) {
@@ -349,6 +396,11 @@ UniversalDApp.prototype.runTx = function (args, cb) {
       }
     },
     function runTransaction (fromAddress, value, gasLimit, privateKey, next) {
+      // console.log('@universal-dapp.js runTransaction')
+      // console.log('* fromAddress: ', fromAddress)
+      // console.log('* value: ', value)
+      // console.log('* gasLimit: ', gasLimit)
+      // console.log('* args: ', args)
       var tx = { to: args.to, data: args.data.dataHex, useCall: args.useCall, from: fromAddress, value: value, gasLimit: gasLimit, privateKey: privateKey }
       var payLoad = { funAbi: args.data.funAbi, funArgs: args.data.funArgs, contractBytecode: args.data.contractBytecode, contractName: args.data.contractName }
       var timestamp = Date.now()
@@ -365,9 +417,9 @@ UniversalDApp.prototype.runTx = function (args, cb) {
 
       self.event.trigger('initiatingTransaction', [timestamp, tx, payLoad])
       self.txRunner.rawRun(tx,
-
         (network, tx, gasEstimation, continueTxExecution, cancelCb) => {
-          if (network.name !== 'Main' && network.name !== 'Goguen') { // @rv: Let user specify gasPrice
+          // console.log('@universal-dapp.js self.txRunner.rawRun finished')
+          if (network.name !== 'Main' && !executionContext.isCustomRPC()) { // @rv: Let user specify gasPrice
             return continueTxExecution(null)
           }
           var amount = executionContext.web3().fromWei(typeConversion.toInt(tx.value), 'ether')
@@ -445,7 +497,7 @@ UniversalDApp.prototype.runTx = function (args, cb) {
         },
         function (error, result) {
           let eventName = (tx.useCall ? 'callExecuted' : 'transactionExecuted')
-          self.event.trigger(eventName, [error, tx.from, tx.to, tx.data, tx.useCall, result, timestamp, payLoad])
+          self.event.trigger(eventName, [error, tx.from, tx.to, tx.data, tx.useCall, result, timestamp, payLoad, args.data.contract])
 
           if (error && (typeof (error) !== 'string')) {
             if (error.message) error = error.message
@@ -578,9 +630,9 @@ UniversalDApp.prototype.importAccount = function(cb) {
 
 /**
  * @rv: Add custom RPC information to local storage
- * @param {{rpcUrl:string, chainId:number}} param0 
+ * @param {{rpcUrl:string, chainId:number, vm:string}} param0 
  */
-UniversalDApp.prototype.addCustomRPC = function({rpcUrl, chainId}) {
+UniversalDApp.prototype.addCustomRPC = function({rpcUrl, chainId, vm}) {
   rpcUrl = rpcUrl.trim()
   let name = `${rpcUrl} (chainId: ${chainId})`
   let context = `custom-rpc-${name}`
@@ -592,7 +644,8 @@ UniversalDApp.prototype.addCustomRPC = function({rpcUrl, chainId}) {
     rpcUrl,
     chainId,
     name,
-    context
+    context,
+    vm
   }
   const customRPCs = this._api.config.get('custom-rpc-list') || []
   let find = false 
@@ -607,20 +660,19 @@ UniversalDApp.prototype.addCustomRPC = function({rpcUrl, chainId}) {
     customRPCs.push(customRPC)
   }
   this._api.config.set('custom-rpc-list', customRPCs)
-  window['UniversalDAppConfig'] = this._api.config
   return customRPC
 }
 
 /**
  * @rv: Connect user to Custom RPC
- * @param {(error:string, customRPC:object)=> void} cb 
+ * @param {(error:string, customRPC:object, vm:string)=> void} cb 
  */
 UniversalDApp.prototype.connectToCustomRPC = function(cb) {
-  modalCustom.connectToCustomRPC((error, {rpcUrl, chainId})=> {
+  modalCustom.connectToCustomRPC((error, {rpcUrl, chainId, vm})=> {
     if (error) {
       return cb(error)
     } else {
-      const customRPC = this.addCustomRPC({rpcUrl, chainId})
+      const customRPC = this.addCustomRPC({rpcUrl, chainId, vm})
       return cb(null, customRPC)
     }
   })

@@ -87,8 +87,11 @@ function ExecutionContext () {
   this.blockGasLimit = this.blockGasLimitDefault
 
   this.init = function (config) {
+    this.config = config // @rv: save config to this object scope
     if (config.get('settings/always-use-vm')) {
       executionContext = 'vm'
+    } else if (config.get('history/execution-context')) {
+      executionContext = config.get('history/execution-context')
     } else {
       executionContext = injectedProvider ? 'injected' : 'vm'
     }
@@ -122,6 +125,16 @@ function ExecutionContext () {
 
   this.web3 = function () {
     return this.isVM() ? web3VM : web3
+  }
+
+  this.isIeleVM = function() { // TODO: @rv: use new endpoint to check if the node is using iele vm
+    const customRPCList = this.config.get('custom-rpc-list') || []
+    const customRPC = customRPCList.filter((x)=> x.context === executionContext)[0]
+    if (customRPC) {
+      return customRPC.vm === 'ielevm'
+    } else {
+      return false
+    }
   }
 
   this.detectNetwork = function (callback) {
@@ -172,6 +185,9 @@ function ExecutionContext () {
 
   this.executionContextChange = function (context, endPointUrl, confirmCb, infoCb, cb) {
     if (!cb) cb = () => {}
+
+    // @rv: save context to history
+    this.config.set('history/execution-context', context)
 
     if (context === 'vm') {
       executionContext = context

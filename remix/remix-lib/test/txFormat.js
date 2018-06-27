@@ -143,7 +143,7 @@ function encodeFunctionCallTest (st) {
   var output = compiler.compileStandardWrapper(compilerInput(encodeFunctionCall))
   output = JSON.parse(output)
   var contract = output.contracts['test.sol']['testContractLinkLibrary']
-  txFormat.encodeFunctionCall('123, "test string"', contract.abi[0], (error, encoded) => {
+  txFormat.encodeFunctionCall('123, "test string"', contract.abi[0], false, (error, encoded) => {
     console.log(error)
     st.equal(encoded.dataHex, '0x805da4ad000000000000000000000000000000000000000000000000000000000000007b0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000b7465737420737472696e67000000000000000000000000000000000000000000')
   })
@@ -174,7 +174,7 @@ tape('test abiEncoderV2', function (t) {
     var output = compiler.compileStandardWrapper(compilerInput(abiEncoderV2))
     output = JSON.parse(output)
     var contract = output.contracts['test.sol']['test']
-    txFormat.encodeFunctionCall(decodedData, contract.abi[0], (error, encoded) => {
+    txFormat.encodeFunctionCall(decodedData, contract.abi[0], false, (error, encoded) => {
       console.log(error)
       st.equal(encoded.dataHex, functionId + encodedData.replace('0x', ''))
     })

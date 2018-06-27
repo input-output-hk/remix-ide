@@ -8,6 +8,7 @@ const modalDialogCustom = require('../ui/modal-dialog-custom')
 const styleGuide = require('../ui/styles-guide/theme-chooser')
 const parseContracts = require('../contract/contractParser')
 const publishOnSwarm = require('../contract/publishOnSwarm')
+const executionContext = require('../../execution-context')
 
 const styles = styleGuide.chooser()
 
@@ -20,7 +21,6 @@ module.exports = class CompileTab {
     self._view = {
       el: null,
       autoCompile: null,
-      compileToIELE: null,
       compileButton: null,
       warnCompilationSlow: null,
       compileIcon: null,
@@ -31,7 +31,6 @@ module.exports = class CompileTab {
     }
     self.data = {
       autoCompile: self._opts.config.get('autoCompile'),
-      compileToIELE: self._opts.config.get('compileToIELE'),
       compileTimeout: null,
       contractsDetails: {},
       maxTime: 1000,
@@ -79,7 +78,7 @@ module.exports = class CompileTab {
       self._view.compileIcon.setAttribute('title', '')
     })
     self._events.compiler.register('compilationFinished', function finish (success, data, source) {
-      console.log('@compile-tab.js compilationFinished: ', success, data, source)
+      // console.log('@compile-tab.js compilationFinished: ', success, data, source)
       if (self._view.compileIcon) {
         const compileTab = document.querySelector('.compileView')
         compileTab.style.color = styles.colors.black
@@ -94,11 +93,8 @@ module.exports = class CompileTab {
       self._view.contractNames.innerHTML = ''
       if (success) {
         self._view.contractNames.removeAttribute('disabled')
-        console.log('@@ visitContracts 1');
         self._opts.compiler.visitContracts(contract => {
-          console.log('@@ visitContracts 1: ', contract)
           self.data.contractsDetails[contract.name] = parseContracts(contract.name, contract.object, self._opts.compiler.getSource(contract.file))
-          console.log('@@ visitContracts 1 => contractDetail: ', self.data.contractsDetails[contract.name])
           var contractName = yo`<option>${contract.name}</option>`
           self._view.contractNames.appendChild(contractName)
         })
@@ -123,7 +119,6 @@ module.exports = class CompileTab {
         })
       }
       if (!error && data.contracts) {
-        console.log('@@ visitContracts 2');
         self._opts.compiler.visitContracts((contract) => {
           self._opts.renderer.error(contract.name, self._view.errorContainer, {type: 'success'})
         })
@@ -136,24 +131,23 @@ module.exports = class CompileTab {
         self._opts.renderer.error(msg, self._view.errorContainer, settings)
       }
     })
+
+    // @rv
+    executionContext.event.register('contextChanged', ()=> {
+      const compileEl = document.getElementById('compile')
+      if (compileEl) {
+        compileEl.innerText = `Start to compile (${(executionContext.isIeleVM() ? 'ielevm' : 'evm')})`
+      }
+    })
   }
   render () {
     const self = this
     if (self._view.el) return self._view.el
     self._view.warnCompilationSlow = yo`<i title="Copy Address" style="display:none" class="${css.warnCompilationSlow} fa fa-exclamation-triangle" aria-hidden="true"></i>`
     self._view.compileIcon = yo`<i class="fa fa-refresh ${css.icon}" aria-hidden="true"></i>`
-    self._view.compileButton = yo`<div class="${css.compileButton}" onclick=${compile} id="compile" title="Compile source code">${self._view.compileIcon} Start to compile</div>`
+    self._view.compileButton = yo`<div class="${css.compileButton}" onclick=${compile} id="compile" title="Compile source code">${self._view.compileIcon} Start to compile (${(executionContext.isIeleVM() ? 'ielevm' : 'evm')})</div>`
     self._view.autoCompile = yo`<input class="${css.autocompile}" onchange=${updateAutoCompile} id="autoCompile" type="checkbox" title="Auto compile">`
-    self._view.compileToIELE = yo`<input class="${css.autocompile}" onchange=${updateCompileToIELE} id="compileToIELE" type="checkbox" title="Compile to IELE">`
     if (self.data.autoCompile) self._view.autoCompile.setAttribute('checked', '')
-    if (self.data.compileToIELE) self._view.compileToIELE.setAttribute('checked', '')
-    /**
-     * TODO: add this back
-          <div class="${css.autocompileContainer}">
-            ${self._view.compileToIELE}
-            <span class="${css.autocompileText}">Compile to IELE</span>
-          </div>
-     */
     self._view.compileContainer = yo`
       <div class="${css.compileContainer}">
         <div class="${css.compileButtons}">
@@ -183,6 +177,7 @@ module.exports = class CompileTab {
       </div>`
     const help = {
       'Assembly': 'Assembly opcodes describing the contract including corresponding solidity source code',
+      'IeleAssembly': 'IELE Assembly code describing the contract including corresponding solidity source code', // @rv
       'Opcodes': 'Assembly opcodes describing the contract',
       'Runtime Bytecode': 'Bytecode storing the state and being executed during normal contract call',
       'bytecode': 'Bytecode being executed during contract creation',
@@ -196,10 +191,8 @@ module.exports = class CompileTab {
       'web3Deploy': 'Copy/paste this code to any JavaScript/Web3 console to deploy this contract'
     }
     function updateAutoCompile (event) { self._opts.config.set('autoCompile', self._view.autoCompile.checked) }
-    function updateCompileToIELE (event) { self._opts.config.set('compileToIELE', self._view.compileToIELE.checked) }
     function compile (event) { self._api.runCompiler() }
     function details () {
-      console.log('@ click details')
       const select = self._view.contractNames
       if (select.children.length > 0 && select.selectedIndex >= 0) {
         const contractName = select.children[select.selectedIndex].innerHTML
@@ -218,7 +211,8 @@ module.exports = class CompileTab {
     }
     function insertValue (details, propertyName) {
       var node
-      if (propertyName === 'web3Deploy' || propertyName === 'name' || propertyName === 'Assembly') {
+      if (propertyName === 'web3Deploy' || propertyName === 'name' || propertyName === 'Assembly' || 
+          propertyName === 'IeleAssembly') { // @rv
         node = yo`<pre>${details[propertyName]}</pre>`
       } else if (propertyName === 'abi' || propertyName === 'metadata') {
         const treeView = new TreeView({
@@ -291,7 +285,7 @@ const css = csjs`
     margin-bottom: 2%;
   }
   .autocompileContainer {
-    width: 90px;
+    width: 92px;
     display: flex;
     align-items: center;
   }
@@ -324,7 +318,7 @@ const css = csjs`
   }
   .compileButton {
     ${styles.rightPanel.compileTab.button_Compile};
-    width: 120px;
+    width: 200px;
     min-width: 110px;
     margin-right: 1%;
     font-size: 12px;

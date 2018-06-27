@@ -126,6 +126,9 @@ var css = csjs`
     word-break: inherit;
     outline: none;
   }
+  .contractProperty.iele button {
+    background-color: #c0e297f0; /* TODO: @rv change this color */
+  }
   .contractProperty input {
     width: 75%
   }
@@ -241,6 +244,11 @@ var css = csjs`
     padding-right: 26px;
     padding-top: 5px;
     float: right;
+  }
+  .multifields {
+    display: flex;
+    flex-direction: column;
+    padding-left: 12px;
   }
 `
 

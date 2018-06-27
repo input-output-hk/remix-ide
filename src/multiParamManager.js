@@ -10,21 +10,20 @@ class MultiParamManager {
 
   /**
     *
-    * @param {bool} lookupOnly
-    * @param {Object} funABI
-    * @param {Function} clickMultiCallBack
+    * @param {boolean} lookupOnly
+    * @param {object} funABI
+    * @param {function} clickCallBack
     * @param {string} inputs
     * @param {string} title
-    * @param {string} evmBC
+    * @param {{sourceLanguage: string, vm: string, abi: object, ielevm?: object, evm?: object}} contractObject - @rv: the contract object
     *
     */
-  constructor (lookupOnly, funABI, clickCallBack, inputs, title, evmBC) {
+  constructor (lookupOnly, funABI, clickCallBack, inputs, title) {
     this.lookupOnly = lookupOnly
     this.funABI = funABI
     this.clickCallBack = clickCallBack
     this.inputs = inputs
     this.title = title
-    this.evmBC = evmBC
     this.basicInputField
     this.multiFields
   }
@@ -98,7 +97,7 @@ class MultiParamManager {
 
   createMultiFields () {
     if (this.funABI.inputs) {
-      return yo`<div>
+      return yo`<div class="${css.multifields}">
         ${this.funABI.inputs.map(function (inp) {
           return yo`<div class="${css.multiArg}"><label for="${inp.name}"> ${inp.name}: </label><input placeholder="${inp.type}" id="${inp.name}" title="${inp.name}"></div>`
         })}
@@ -152,28 +151,32 @@ class MultiParamManager {
         ${this.multiFields}
         <div class="${css.group} ${css.multiArg}" >
           ${button}
-          ${copyToClipboard(
+          ${
+          // @rv: disable clipboard for now
+          /*
+            copyToClipboard(
             () => {
               var multiString = this.getMultiValsString()
               var multiJSON = JSON.parse('[' + multiString + ']')
               var encodeObj
               if (this.evmBC) {
-                encodeObj = txFormat.encodeData(this.funABI, multiJSON, this.evmBC)
+                encodeObj = txFormat.encodeData(this.funABI, multiJSON, this.evmBC, this.isIele)
               } else {
-                encodeObj = txFormat.encodeData(this.funABI, multiJSON)
+                encodeObj = txFormat.encodeData(this.funABI, multiJSON, '', this.isIele)
               }
               if (encodeObj.error) {
                 throw new Error(encodeObj.error)
               } else {
                 return encodeObj.data
               }
-            }, 'Encode values of input fields & copy to clipboard', 'fa-briefcase')}
+            }, 'Encode values of input fields & copy to clipboard', 'fa-briefcase')
+          */''
+          }
         </div>
       </div>
     </div>`
 
     var contractProperty = yo`<div class="${css.contractProperty}">${this.contractActionsContainerSingle} ${this.contractActionsContainerMulti}</div>`
-
     if (this.lookupOnly) {
       contractProperty.classList.add(css.constant)
       button.setAttribute('title', (title + ' - call'))

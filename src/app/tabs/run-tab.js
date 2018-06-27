@@ -52,7 +52,9 @@ function runTab (appAPI = {}, appEvents = {}, opts = {}) {
     </div>`
 
   var container = yo`<div class="${css.runTabView}" id="runTabView" ></div>`
-  var recorderInterface = makeRecorder(appAPI, appEvents, opts, self)
+
+  // TODO: @rv: recorderInterface is temporarily disabled
+  // var recorderInterface = makeRecorder(appAPI, appEvents, opts, self) // @rv: disabled temporarily
 
   self._view.collapsedView = yo`
     <div class=${css.recorderCollapsedView}>
@@ -64,13 +66,17 @@ function runTab (appAPI = {}, appEvents = {}, opts = {}) {
       <div class=${css.recorderDescription}>
         ${self.data.text}
       </div>
+      ${/*
       <div class="${css.transactionActions}">
         ${recorderInterface.recordButton}
         ${recorderInterface.runButton}
         </div>
       </div>
+        */''}
     </div>`
 
+  /*
+  // @rv: disable recorder
   self.recorderOpts = {
     title: 'Transactions recorded:',
     collapsedView: self._view.collapsedView
@@ -87,6 +93,8 @@ function runTab (appAPI = {}, appEvents = {}, opts = {}) {
       status.appendChild(self._view.collapsedView)
     }
   })
+  */
+
     /* -------------------------
          MAIN HTML ELEMENT
     --------------------------- */
@@ -94,7 +102,7 @@ function runTab (appAPI = {}, appEvents = {}, opts = {}) {
   <div>
     ${settings(container, appAPI, appEvents, opts)}
     ${contractDropdown(event, appAPI, appEvents, opts, self)}
-    ${recorderCard.render()}
+    ${''/*recorderCard.render() // @rv: disabled recorder */} 
     ${self._view.instanceContainer}
   </div>
   `
@@ -167,6 +175,8 @@ function runTab (appAPI = {}, appEvents = {}, opts = {}) {
     instanceContainer.appendChild(instanceContainerTitle)
     instanceContainer.appendChild(self._view.noInstancesText)
   })
+
+  selectExEnv.dispatchEvent(new Event('change')) // @rv;
   return { render () { return container } }
 }
 
@@ -201,6 +211,8 @@ function updateAccountBalances (container, appAPI) {
 /* ------------------------------------------------
            RECORDER
 ------------------------------------------------ */
+/*
+TODO: @rv: this function is temporarily disabled
 function makeRecorder (appAPI, appEvents, opts, self) {
   var recorder = new Recorder(opts.compiler, opts.udapp, {
     events: {
@@ -211,6 +223,7 @@ function makeRecorder (appAPI, appEvents, opts, self) {
     api: appAPI
   })
   recorder.event.register('newTxRecorded', (count) => {
+    console.log('@run-tab.js newTxRecorded triggered')
     self.data.count = count
     self._view.recorderCount.innerText = count
   })
@@ -250,11 +263,11 @@ function makeRecorder (appAPI, appEvents, opts, self) {
   }
 
   runButton.onclick = () => {
-    /*
-    @TODO
-    update account address in scenario.json
-    popup if scenario.json not open - "Open a file with transactions you want to replay and click play again"
-    */
+    //
+    //@TODO
+    //update account address in scenario.json
+    //popup if scenario.json not open - "Open a file with transactions you want to replay and click play again"
+    //
     var currentFile = opts.config.get('currentFile')
     appAPI.fileProviderOf(currentFile).get(currentFile, (error, json) => {
       if (error) {
@@ -286,7 +299,8 @@ function makeRecorder (appAPI, appEvents, opts, self) {
   }
 
   return { recordButton, runButton }
-}
+}*/
+
 /* ------------------------------------------------
     CONTRACT (deploy or access deployed)
 ------------------------------------------------ */
@@ -298,7 +312,7 @@ function contractDropdown (events, appAPI, appEvents, opts, self) {
   instanceContainer.appendChild(self._view.noInstancesText)
   var compFails = yo`<i title="Contract compilation failed. Please check the compile tab for more information." class="fa fa-times-circle ${css.errorIcon}" ></i>`
   appEvents.compiler.register('compilationFinished', function (success, data, source) {
-    // TODO: @rv support .iele
+    // @rv: toggle elements
     toggleRVElements()
     getContractNames(success, data)
     if (success) {
@@ -343,26 +357,21 @@ function contractDropdown (events, appAPI, appEvents, opts, self) {
   `
 
   function setInputParamsPlaceHolder () {
-    console.log('@run-tab.js setInputParamsPlaceHolder => ', getSelectedContract().contract)
     createPanel.innerHTML = ''
     if (opts.compiler.getContract && selectContractNames.selectedIndex >= 0 && selectContractNames.children.length > 0) {
       // @rv: support iele bytecode 
       const contract = getSelectedContract().contract
-      if (contract.object.evm) { // evm
-        var ctrabi = txHelper.getConstructorInterface(contract.object.abi)
-        var ctrEVMbc = contract.object.evm.bytecode.object
-        var createConstructorInstance = new MultiParamManager(0, ctrabi, (valArray, inputsValues) => {
-          createInstance(inputsValues)
-        }, txHelper.inputParametersDeclarationToString(ctrabi.inputs), 'Deploy (EVM)', ctrEVMbc)
-        createPanel.appendChild(createConstructorInstance.render())
-        return
-      } else { // iele vm
-        const ctrabi = txHelper.getConstructorInterface(contract.object.abi) // TODO: <= support getIELEConstructorInterface
-        const ctrIELEVMbc = contract.object.ielevm.bytecode.object
-        const createConstructorInstance = new MultiParamManager(0, ctrabi, (valArray, inputValues)=> {
-          createInstance(inputsValues) // TODO: <= support createIELEInstance
-        }, txHelper.inputParametersDeclarationToString(ctrabi.inputs), 'Deploy (IELE)', ctrIELEVMbc)
+      let ctrabi, vmbc;
+      if (contract.object.sourceLanguage === 'solidity') { // solidity language
+        ctrabi = txHelper.getConstructorInterface(contract.object.abi)
+      } else { // iele language
+        ctrabi = txHelper.getConstructorInterfaceForIELE(contract.object.abi) // TODO: <= support getIELEConstructorInterface
       }
+
+      var createConstructorInstance = new MultiParamManager(0, ctrabi, (valArray, inputsValues) => {
+        createInstance(inputsValues)
+      }, txHelper.inputParametersDeclarationToString(ctrabi.inputs), `Deploy (${contract.object.vm.toUpperCase()})`)
+      createPanel.appendChild(createConstructorInstance.render())
     } else {
       createPanel.innerHTML = 'No compiled contracts'
     }
@@ -371,15 +380,33 @@ function contractDropdown (events, appAPI, appEvents, opts, self) {
   selectContractNames.addEventListener('change', setInputParamsPlaceHolder)
 
   // DEPLOY INSTANCE
+  /**
+   * @rv
+   * @param {} args 
+   * @param {{sourceLanguage: string, vm: string, ielevm?:object, evm?:object, abi: object}} contract contract object 
+   */
   function createInstance (args) {
-    var selectedContract = getSelectedContract()
+    const selectedContract = getSelectedContract()
 
-    if (selectedContract.contract.object.evm.bytecode.object.length === 0) {
-      modalDialogCustom.alert('This contract does not implement all functions and thus cannot be created.')
-      return
+    if (selectedContract.contract.object.vm === 'ielevm') {
+      if (selectedContract.contract.object.ielevm.bytecode.object.length === 0) {
+        modalDialogCustom.alert('This contract does not implement all functions and thus cannot be created.')
+        return
+      }
+    } else {
+      if (selectedContract.contract.object.evm.bytecode.object.length === 0) { // evm
+        modalDialogCustom.alert('This contract does not implement all functions and thus cannot be created.')
+        return
+      } 
     }
 
-    var constructor = txHelper.getConstructorInterface(selectedContract.contract.object.abi)
+    let constructor
+    if (selectedContract.contract.object.sourceLanguage === 'iele') {
+      constructor = txHelper.getConstructorInterfaceForIELE(selectedContract.contract.object.abi)
+    } else {
+      constructor = txHelper.getConstructorInterface(selectedContract.contract.object.abi)
+    }
+
     txFormat.buildData(selectedContract.name, selectedContract.contract.object, opts.compiler.getContracts(), true, constructor, args, (error, data) => {
       if (!error) {
         appAPI.logMessage(`creation of ${selectedContract.name} pending...`)
@@ -428,6 +455,7 @@ function contractDropdown (events, appAPI, appEvents, opts, self) {
     if (/[a-f]/.test(address) && /[A-F]/.test(address) && !ethJSUtil.isValidChecksumAddress(address)) {
       return modalDialogCustom.alert('Invalid checksum address.')
     }
+    // TODO: load contract according to ABI is temporarily disabled
     if (/.(.abi)$/.exec(config.get('currentFile'))) {
       modalDialogCustom.confirm(null, 'Do you really want to interact with ' + address + ' using the current ABI definition ?', () => {
         var abi
@@ -684,6 +712,9 @@ function settings (container, appAPI, appEvents, opts) {
     
     opts.config.set('custom-rpc-list', newCustomRPCList) // update `custom-rpc-list`
 
+    const newContext = newCustomRPCList.length ? newCustomRPCList[0].context : 'vm' // change selected environment
+    $environmentSelect[0].value = newContext
+
     const $options = $('option', $environmentSelect) // remove from gui
     for (let i = 0; i < $options.length; i++) {
       if ($options[i].getAttribute('value') === context) {
@@ -691,9 +722,6 @@ function settings (container, appAPI, appEvents, opts) {
         break
       }
     }
-
-    const newContext = newCustomRPCList.length ? newCustomRPCList[0] : 'vm' // change selected environment
-    $environmentSelect[0].value = newContext
     $environmentSelect[0].dispatchEvent(new Event('change'))
   }
 
@@ -718,7 +746,16 @@ function settings (container, appAPI, appEvents, opts) {
       name: 'KEVM Testnet',
       context: 'custom-rpc-kevm-testnet',
       chainId: undefined,
-      rpcUrl: 'https://kevm-testnet.iohkdev.io:8546/'
+      rpcUrl: 'https://kevm-testnet.iohkdev.io:8546/',
+      vm: 'evm'
+    })
+
+    addIfNotExists({
+      name: 'IELE Testnet (dev)',
+      context: 'custom-rpc-iele-testnet-dev',
+      chainId: undefined,
+      rpcUrl: 'https://staging-iele.kevm-private.mantis.iohkdev.io:8546/',
+      vm: 'ielevm'
     })
 
     opts.config.set('custom-rpc-list', customRPCList)

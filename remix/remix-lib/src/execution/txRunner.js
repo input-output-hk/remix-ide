@@ -28,7 +28,10 @@ TxRunner.prototype.rawRun = function (args, confirmationCb, gasEstimationForceSe
 }
 
 TxRunner.prototype._executeTx = function (tx, gasPrice, chainId, privateKey, api, promptCb, callback) {
-  // console.log('@TxRunner.prototype._executeTx', tx, gasPrice)
+  // console.log('@txRunner.js TxRunner.prototype._executeTx')
+  // console.log('* tx: ',tx)
+  // console.log('* gasPrice: ', gasPrice)
+  // console.log('* chainId: ', chainId)
   // console.log('                              personalMode: ', api.personalMode())
   if (gasPrice) tx.gasPrice = executionContext.web3().toHex(gasPrice)
   if (api.personalMode()) {
@@ -62,11 +65,13 @@ TxRunner.prototype._sendTransaction = function (sendTx, tx, pass, chainId, priva
     if (executionContext.isCustomRPC()) {
       privateKey = Buffer.from(privateKey, 'hex') // convert to Buffer
       const nonce = executionContext.web3().eth.getTransactionCount(tx.from, "latest")
+      // console.log('@txRunner.js TxRunner.prototype._sendTransaction')
       // console.log('* nonce: ', nonce)
       // console.log('* gas: ', tx.gas)
       // console.log('* gasPrice: ', parseInt(tx.gasPrice))
       // console.log('* value: ', tx.value)
       // console.log('* chainId: ', chainId)
+      // console.log('* p: ', privateKey.toString('hex'))
       const newTx = {
         nonce: new BN(nonce),
         gasPrice: new BN(parseInt(tx.gasPrice) || 5000000000), // default: 5 gwei
@@ -82,10 +87,10 @@ TxRunner.prototype._sendTransaction = function (sendTx, tx, pass, chainId, priva
       }
       const ethTx = new EthJSTX(newTx)
       ethTx.sign(privateKey)
-      window['ethTx'] = ethTx
       const serializedTx = ethTx.serialize()  
       args = ["0x" + serializedTx.toString('hex'), cb]
       // console.log('* binary data: ', "0x" + serializedTx.toString('hex'))
+      // console.log('* rawTransaction: ', args[0])
       sendTx = executionContext.web3().eth.sendRawTransaction
     }
     sendTx.apply({}, args)
@@ -167,6 +172,11 @@ TxRunner.prototype.runInNode = function (from, to, data, value, gasLimit, useCal
   const self = this
   var tx = { from: from, to: to, data: data, value: value }
 
+  // console.log('@txRunner.js TxRunner.prototype.runInNode')
+  // console.log('* tx: ', tx)
+  // console.log('* gasLimit: ', gasLimit)
+  // console.log('* useCall: ', useCall)
+  // console.log('* chainId: ', chainId)
   if (useCall) {
     tx.gas = gasLimit
     return executionContext.web3().eth.call(tx, function (error, result) {
@@ -178,6 +188,7 @@ TxRunner.prototype.runInNode = function (from, to, data, value, gasLimit, useCal
   }
   executionContext.web3().eth.estimateGas(tx, function (err, gasEstimation) {
     gasEstimationForceSend(err, () => {
+      // console.log('- gasEstimation: ', gasEstimation)
       // callback is called whenever no error
       tx.gas = !gasEstimation ? gasLimit : gasEstimation
 

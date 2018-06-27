@@ -5,6 +5,10 @@ var executionContext = require('./execution-context')
 var asyncJS = require('async')
 var solcLinker = require('solc/linker')
 var ethJSUtil = require('ethereumjs-util')
+const RLP = require('rlp') // @rv: import RLP for encoding Iele transaction.
+const ieleTranslator = require('./ieleTranslator')
+
+// TODO: @rv: this file needs to be modified to support encoding for IELE
 
 module.exports = {
 
@@ -13,21 +17,29 @@ module.exports = {
     *
     * @param {Object} function abi
     * @param {Object} values to encode
-    * @param {String} contractbyteCode
+    * @param {String} contractBytecode
     */
-  encodeData: function (funABI, values, contractbyteCode) {
+  encodeData: function (funABI, values, contractBytecode, isIele) { // @rv: add `isIele`
     var encoded
     var encodedHex
     try {
-      encoded = helper.encodeParams(funABI, values)
+      encoded = helper.encodeParams(funABI, values, isIele)
       encodedHex = encoded.toString('hex')
     } catch (e) {
       return { error: 'cannot encode arguments' }
     }
-    if (contractbyteCode) {
-      return { data: '0x' + contractbyteCode + encodedHex.replace('0x', '') }
+    if (isIele) {
+      if (contractBytecode) {
+        return { data: RLP.encode([(contractBytecode.startsWith('0x') ? '' : '0x') + contractBytecode, encoded]).toString('hex') }
+      } else {
+        return { data: RLP.encode([funABI.name, encoded]).toString('hex') }
+      }
     } else {
-      return { data: helper.encodeFunctionId(funABI) + encodedHex.replace('0x', '') }
+      if (contractBytecode) {
+        return { data: '0x' + contractBytecode + encodedHex.replace('0x', '') }
+      } else {
+        return { data: helper.encodeFunctionId(funABI) + encodedHex.replace('0x', '') }
+      }
     }
   },
 
@@ -38,7 +50,8 @@ module.exports = {
   * @param {Object} funAbi    - abi definition of the function to call. null if building data for the ctor.
   * @param {Function} callback    - callback
   */
-  encodeParams: function (params, funAbi, callback) {
+  encodeParams: function (params, funAbi, isIele, callback) {
+    // console.log(`@txFormat.js encodeParams: `, params, funAbi)
     var data = ''
     var dataHex = ''
     var funArgs
@@ -57,7 +70,7 @@ module.exports = {
       }
       if (funArgs.length > 0) {
         try {
-          data = helper.encodeParams(funAbi, funArgs)
+          data = helper.encodeParams(funAbi, funArgs, isIele)
           dataHex = data.toString('hex')
         } catch (e) {
           callback('Error encoding arguments: ' + e)
@@ -81,10 +94,14 @@ module.exports = {
   * @param {Object} funAbi    - abi definition of the function to call. null if building data for the ctor.
   * @param {Function} callback    - callback
   */
-  encodeFunctionCall: function (params, funAbi, callback) {
-    this.encodeParams(params, funAbi, (error, encodedParam) => {
+  encodeFunctionCall: function (params, funAbi, isIele, callback) { // TODO: isIele
+    this.encodeParams(params, funAbi, isIele, (error, encodedParam) => {
       if (error) return callback(error)
-      callback(null, { dataHex: helper.encodeFunctionId(funAbi) + encodedParam.dataHex, funAbi, funArgs: encodedParam.funArgs })
+      if (isIele) { // TODO: fix this 
+        callback(null, { dataHex: RLP.encode([funAbi.name, encodedParam]).toString('hex'), funAbi, funArgs: encodedParam.funArgs })
+      } else {
+        callback(null, { dataHex: helper.encodeFunctionId(funAbi) + encodedParam.dataHex, funAbi, funArgs: encodedParam.funArgs })
+      }
     })
   },
 
@@ -99,7 +116,8 @@ module.exports = {
   * @param {Function} callback    - callback
   */
   encodeConstructorCallAndLinkLibraries: function (contract, params, funAbi, linkLibraries, linkReferences, callback) {
-    this.encodeParams(params, funAbi, (error, encodedParam) => {
+    const isIele = contract.ielevm
+    this.encodeParams(params, funAbi, isIele, (error, encodedParam) => {
       if (error) return callback(error)
       var bytecodeToDeploy = contract.evm.bytecode.object
       if (bytecodeToDeploy.indexOf('_') >= 0) {
@@ -157,19 +175,26 @@ module.exports = {
   },
 
   /**
-  * (DEPRECATED) build the transaction data
+  * build the transaction data
   *
-  * @param {String} contractName
-  * @param {Object} contract    - abi definition of the current contract.
-  * @param {Object} contracts    - map of all compiled contracts.
-  * @param {Bool} isConstructor    - isConstructor.
-  * @param {Object} funAbi    - abi definition of the function to call. null if building data for the ctor.
-  * @param {Object} params    - input paramater of the function to call
-  * @param {Function} callback    - callback
-  * @param {Function} callbackStep  - callbackStep
-  * @param {Function} callbackDeployLibrary  - callbackDeployLibrary
+  * @param {string} contractName
+  * @param {{sourceLanguage: string, vm: string, ielevm?: object, evm?: object, abi: object}} contract    - contract object.
+  * @param {object} contracts    - map of all compiled contracts.
+  * @param {boolean} isConstructor    - isConstructor.
+  * @param {object} funAbi    - abi definition of the function to call. null if building data for the ctor.
+  * @param {object} params    - input paramater of the function to call
+  * @param {function} callback    - callback
+  * @param {function} callbackStep  - callbackStep
+  * @param {function} callbackDeployLibrary  - callbackDeployLibrary
   */
   buildData: function (contractName, contract, contracts, isConstructor, funAbi, params, callback, callbackStep, callbackDeployLibrary) {
+    // console.log('@txFormat.js buildData => ')
+    // console.log('* contractName: ', contractName)
+    // console.log('* contract: ', contract)
+    // console.log('* contracts: ', contracts)
+    // console.log('* isConstructor: ', isConstructor)
+    // console.log('* funAbi: ', funAbi)
+    // console.log('* params: ', params)
     var funArgs = ''
     var data = ''
     var dataHex = ''
@@ -187,9 +212,9 @@ module.exports = {
         callback('Error encoding arguments: ' + e)
         return
       }
-      if (!isConstructor || funArgs.length > 0) {
+      if (!isConstructor || funArgs.length > 0 || contract.vm === 'ielevm') {
         try {
-          data = helper.encodeParams(funAbi, funArgs)
+          data = helper.encodeParams(funAbi, funArgs, contract.sourceLanguage, contract.vm) // @rv: Support iele
           dataHex = data.toString('hex')
         } catch (e) {
           callback('Error encoding arguments: ' + e)
@@ -205,28 +230,50 @@ module.exports = {
     }
     var contractBytecode
     if (isConstructor) {
-      contractBytecode = contract.evm.bytecode.object
-      var bytecodeToDeploy = contract.evm.bytecode.object
-      if (bytecodeToDeploy.indexOf('_') >= 0) {
-        this.linkBytecode(contract, contracts, (err, bytecode) => {
-          if (err) {
-            callback('Error deploying required libraries: ' + err)
-          } else {
-            bytecodeToDeploy = bytecode + dataHex
-            return callback(null, {dataHex: bytecodeToDeploy, funAbi, funArgs, contractBytecode, contractName: contractName})
-          }
-        }, callbackStep, callbackDeployLibrary)
-        return
+      if (contract.vm === 'ielevm') {
+        // console.log('@txFormat.js deploy IELE smart contract: ')
+        // console.log('* contractByteCode: ', contract.ielevm.bytecode.object)
+        // console.log('* data: ', data)
+        // console.log('* funArgs: ', funArgs)
+        contractBytecode = contract.ielevm.bytecode.object 
+        dataHex = RLP.encode([(contractBytecode.startsWith('0x') ? '' : '0x') + contractBytecode, data]).toString('hex') // 0x here is necessary
+        // console.log('* dataHex: ', dataHex)
       } else {
-        dataHex = bytecodeToDeploy + dataHex
+        contractBytecode = contract.evm.bytecode.object
+        var bytecodeToDeploy = contract.evm.bytecode.object
+        if (bytecodeToDeploy.indexOf('_') >= 0) {
+          this.linkBytecode(contract, contracts, (err, bytecode) => {
+            if (err) {
+              callback('Error deploying required libraries: ' + err)
+            } else {
+              bytecodeToDeploy = bytecode + dataHex
+              return callback(null, {dataHex: bytecodeToDeploy, funAbi, funArgs, contractBytecode, contractName, contract})
+            }
+          }, callbackStep, callbackDeployLibrary)
+          return
+        } else {
+          dataHex = bytecodeToDeploy + dataHex
+        }
       }
     } else {
-      dataHex = helper.encodeFunctionId(funAbi) + dataHex
+      if (contract.vm === 'ielevm') {
+        // console.log('@txFormat.js call function: ')
+        // console.log('* funAbi.name: ', funAbi.name)
+        // console.log('* data: ', data)
+        // console.log('* funArgs: ', funArgs)
+        if (contract.sourceLanguage === 'solidity') {  // convert to iele function name
+          // console.log('* solidity2iele funName: ', ieleTranslator.encodeSolidityFunctionName(funAbi))
+          dataHex = RLP.encode([ieleTranslator.encodeSolidityFunctionName(funAbi), data]).toString('hex')
+        } else {
+          dataHex = RLP.encode([funAbi.name, data]).toString('hex')
+        }
+        // console.log('* dataHex: ', dataHex)
+      } else {
+        dataHex = helper.encodeFunctionId(funAbi) + dataHex
+      }
     }
-    callback(null, { dataHex, funAbi, funArgs, contractBytecode, contractName: contractName })
+    callback(null, { dataHex, funAbi, funArgs, contractBytecode, contractName, contract })
   },
-
-  atAddress: function () {},
 
   linkBytecodeStandard: function (contract, contracts, callback, callbackStep, callbackDeployLibrary) {
     asyncJS.eachOfSeries(contract.evm.bytecode.linkReferences, (libs, file, cbFile) => {

@@ -55,15 +55,17 @@ function RighthandPanel (appAPI = {}, events = {}, opts = {}) {
   optionViews.appendChild(debuggerTab.render())
   var supportTab = new SupportTab(appAPI, events, opts)
   optionViews.appendChild(supportTab.render())
-  var testTab = new TestTab(appAPI, events, opts)
-  optionViews.appendChild(testTab.render())
+  // @rv: disable testTab
+  // var testTab = new TestTab(appAPI, events, opts)
+  // optionViews.appendChild(testTab.render())
   this._view.tabbedMenu.addTab('Compile', 'compileView', optionViews.querySelector('#compileTabView'))
   this._view.tabbedMenu.addTab('Run', 'runView', optionViews.querySelector('#runTabView'))
   this._view.tabbedMenu.addTab('Settings', 'settingsView', optionViews.querySelector('#settingsView'))
   this._view.tabbedMenu.addTab('Analysis', 'staticanalysisView', optionViews.querySelector('#staticanalysisView'))
   this._view.tabbedMenu.addTab('Debugger', 'debugView', optionViews.querySelector('#debugView'))
   this._view.tabbedMenu.addTab('Support', 'supportView', optionViews.querySelector('#supportView'))
-  this._view.tabbedMenu.addTab('Test', 'testView', optionViews.querySelector('#testView'))
+  // @rv: disable testTab
+  // this._view.tabbedMenu.addTab('Test', 'testView', optionViews.querySelector('#testView'))
   this._view.tabbedMenu.selectTabByTitle('Compile')
 
   self.pluginManager = new PluginManager(opts.pluginAPI, events)

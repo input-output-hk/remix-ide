@@ -61,6 +61,19 @@ var css = csjs`
     text-transform: uppercase;
     font-weight: bold;
   }
+  .knownTx {
+    font-size: 10px;
+    background-color: ${styles.terminal.icon_BackgroundColor_Log_Call};
+    border-radius: 50%;
+    min-width: 20px;
+    min-height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: ${styles.terminal.icon_Color_Log_Call};
+    text-transform: uppercase;
+    font-weight: bold;
+  }
   .txItem {
     color: ${styles.terminal.text_Primary};
     margin-right: 5px;
@@ -292,6 +305,8 @@ function checkTxStatus (tx, type) {
   }
   if (type === 'call') {
     return yo`<i class="${css.txStatus} ${css.call}">call</i>`
+  } else if (type === 'knownTx') { // @rv, support type `knownTx`
+    return yo`<i class="${css.txStatus} ${css.knownTx} fa fa-briefcase"></i>`
   } else {
     return yo`<i class="${css.txStatus} ${css.failed} fa fa-times-circle"></i>`
   }
