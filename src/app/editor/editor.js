@@ -68,7 +68,6 @@ function Editor (opts = {}) {
   var self = this
   var el = yo`<div id="input"></div>`
   var editor = ace.edit(el)
-  editor.session.setNewLineMode('unix') // @rv: Fix newline on Windows issue.
   if (styles.appProperties.aceTheme) {
     editor.setTheme('ace/theme/' + styles.appProperties.aceTheme)
   }
@@ -148,6 +147,7 @@ function Editor (opts = {}) {
     currentSession = path
     editor.setSession(sessions[currentSession])
     editor.setReadOnly(readOnlySessions[currentSession])
+    editor.session.setNewLineMode('unix') // @rv: Fix newline on Windows issue.
     editor.focus()
 
     // @rv: add .iele support.
