@@ -70,7 +70,7 @@ class ContextualListener {
     this._stopHighlighting()
     this.currentPosition = cursorPosition
     this.currentFile = file
-    if (compilationResult && compilationResult.data && compilationResult.data.sources[file]) {
+    if (compilationResult && compilationResult.data && compilationResult.data.sources && compilationResult.data.sources[file]) { // TODO: @rv: check .sources, which is not existed for both IELE and Solidity2IELE
       var nodes = this.sourceMappingDecoder.nodesAtPosition(null, cursorPosition, compilationResult.data.sources[file])
       this.nodes = nodes
       if (nodes && nodes.length && nodes[nodes.length - 1]) {

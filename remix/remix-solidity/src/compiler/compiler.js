@@ -77,6 +77,43 @@ function Compiler (handleImportCall) {
     self.event.trigger('compilerLoaded', [version])
   }
 
+  /**
+   * @rv: parse solidity error messages
+   */
+  function formatSolidityErrors(message) {
+    message = message.trim().replace('Warning: This is a pre-release compiler version, please do not use it in production.', '')
+    let end = message.indexOf('\n=====')
+    if (end >= 0) {
+      message = message.slice(0, end)
+    }
+    const starts = []
+    const lines = message.split('\n')
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].match(/^([^:]*):([0-9]*):(([0-9]*):)? /)) {
+        starts.push(i)
+      }
+    }
+    const messages = []
+    for (let i = 0; i < starts.length; i++) {
+      const start = starts[i]
+      const end = (i === starts.length - 1) ? lines.length : starts[i + 1]
+      const t = []
+      for (let j = start; j < end; j++) {
+        t.push(lines[j])
+      }
+      messages.push(t.join('\n').trim())
+    }
+    return messages.map((message)=> {
+      return {
+        component: 'general',
+        formattedMessage: message,
+        severity: 'warning',
+        type: 'Warning',
+        message
+      }
+    })
+  }
+
   async function compileSolidityToIELE(result, source, cb) {
     // console.log('@compileSolidityToIELE', result, source)
     const apiGateway = 'https://5c177bzo9e.execute-api.us-east-1.amazonaws.com/prod'
@@ -107,9 +144,17 @@ function Compiler (handleImportCall) {
       code = code.slice(index, code.length)
       code = code.replace(/^IELE\s+assembly\s*\:\s*$/mgi, '')
       const ieleCode = code.replace(/^=====/mg, '// =====').trim()
+      const solidityErrors = formatSolidityErrors(json1['result'])
+
       // console.log('- ieleCode: |' + ieleCode + '|')
       if (!ieleCode) { // error. eg ballot.sol
-        throw json1['result']
+        if (solidityErrors.length) {
+          return cb({
+            errors: solidityErrors
+          })
+        } else {
+          throw json1['result']
+        }
       }
       const newTarget = source.target.replace(/\.sol$/, '.iele')
       const contractNamesMatch = ieleCode.match(/\s*contract\s+(.+?){\s*/ig) // the last contract is the main contract (from Dwight)
@@ -167,6 +212,9 @@ function Compiler (handleImportCall) {
       contracts[targetContractName]['vm'] = 'ielevm'
       contracts[targetContractName]['sourceLanguage'] = 'solidity'
       delete(contracts[targetContractName]['evm'])
+      if (solidityErrors.length) {
+        result['errors'] = solidityErrors
+      }
 
       // Get Solidity ABI 
       const response3 = await window['fetch'](apiGateway, {
@@ -220,7 +268,7 @@ function Compiler (handleImportCall) {
         type: 'Warning',
         message: message,
         sourceLocation: {
-          start,
+          start, // @rv: `sourceLocation` is not even used. Check renderer.js error function.
           end,
           file: target
         }

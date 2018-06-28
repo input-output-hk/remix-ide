@@ -68,7 +68,7 @@ function Editor (opts = {}) {
   var self = this
   var el = yo`<div id="input"></div>`
   var editor = ace.edit(el)
-  window.editor = editor
+  editor.session.setNewLineMode('unix') // @rv: Fix newline on Windows issue.
   if (styles.appProperties.aceTheme) {
     editor.setTheme('ace/theme/' + styles.appProperties.aceTheme)
   }

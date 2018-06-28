@@ -42,6 +42,19 @@ Renderer.prototype.error = function (message, container, opt) {
     opt.errFile = errLocation.errFile
     opt.errLine = errLocation.errLine
     opt.errCol = errLocation.errCol
+  } else {
+    // @rv, analyze error message for iele code.
+    errLocation = text.trim().match(/^"([^\"]+?)"\s+\(\line\s(\d+),\s+column\s+(\d+)\)\s*\:/)
+    if (errLocation) {
+      errLocation = {
+        errFile: errLocation[1],
+        errLine: parseInt(errLocation[2], 10) - 1,
+        errCol: parseInt(errLocation[3], 10) || 0
+      }
+      opt.errFile = errLocation.errFile
+      opt.errLine = errLocation.errLine
+      opt.errCol = errLocation.errCol
+    }
   }
 
   if (!opt.noAnnotations && errLocation) {

@@ -31,7 +31,7 @@ module.exports = {
           if (x.startsWith('0x')) {
             return x
           } else if (!isNaN(x)) {
-            return '0x' + parseInt(x).toString('hex')
+            return '0x' + parseInt(x).toString(16)
           } else {
             return '0x' + x
           }
