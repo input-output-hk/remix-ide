@@ -898,10 +898,6 @@ Please make a backup of your contracts and start using http://remix.ethereum.org
     var currentFile = config.get('currentFile')
     if (currentFile) {
       if (/.(.sol|.iele)$/.exec(currentFile)) {
-        if (currentFile.match(/\.iele$/) && !executionContext.isIeleVM()) {
-          modalDialogCustom.alert("Cannot compile IELE code for the node that is not running IELE Virtual Machine.")
-        }
-
         // only compile *.sol file and *.iele file.
         var target = currentFile
         var sources = {}
@@ -912,7 +908,7 @@ Please make a backup of your contracts and start using http://remix.ethereum.org
               console.log(error)
             } else {
               sources[target] = { content }
-              compiler.compile(sources, target, executionContext.isIeleVM()) // @rv: check if compile with iele vm
+              compiler.compile(sources, target, config.get('compileToIELE')) // @rv: check if compile with iele vm
             }
           })
         } else {

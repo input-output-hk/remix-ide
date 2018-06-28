@@ -62,7 +62,7 @@ var css = csjs`
     font-weight: bold;
   }
   .knownTx {
-    font-size: 10px;
+    font-size: 7px;
     background-color: ${styles.terminal.icon_BackgroundColor_Log_Call};
     border-radius: 50%;
     min-width: 20px;
@@ -306,7 +306,7 @@ function checkTxStatus (tx, type) {
   if (type === 'call') {
     return yo`<i class="${css.txStatus} ${css.call}">call</i>`
   } else if (type === 'knownTx') { // @rv, support type `knownTx`
-    return yo`<i class="${css.txStatus} ${css.knownTx} fa fa-briefcase"></i>`
+    return yo`<i class="${css.txStatus} ${css.knownTx}">tx</i>`
   } else {
     return yo`<i class="${css.txStatus} ${css.failed} fa fa-times-circle"></i>`
   }

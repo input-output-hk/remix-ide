@@ -169,7 +169,7 @@ module.exports = {
    */
   connectToCustomRPC: function(cb) {
     const customRPCPanel = yo`<div>
-      <p>Please note that your accounts will need to be saved in the browser under this mode.</p>
+      <p>Please note that your accounts will be saved in the browser under this mode.</p>
       <p>We will sign your transaction directly in the browser before you send it.</p>
       <input id="rpc-url-input" type="text" name='prompt_text' class="${css['prompt_text']}" placeholder="New RPC URL" >
       <br><br>

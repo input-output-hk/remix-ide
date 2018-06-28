@@ -21,6 +21,7 @@ module.exports = class CompileTab {
     self._view = {
       el: null,
       autoCompile: null,
+      compileToIELE: null,
       compileButton: null,
       warnCompilationSlow: null,
       compileIcon: null,
@@ -31,6 +32,7 @@ module.exports = class CompileTab {
     }
     self.data = {
       autoCompile: self._opts.config.get('autoCompile'),
+      compileToIELE: self._opts.config.get('compileToIELE'),
       compileTimeout: null,
       contractsDetails: {},
       maxTime: 1000,
@@ -133,10 +135,22 @@ module.exports = class CompileTab {
     })
 
     // @rv
-    executionContext.event.register('contextChanged', ()=> {
-      const compileEl = document.getElementById('compile')
-      if (compileEl) {
-        compileEl.innerText = `Start to compile (${(executionContext.isIeleVM() ? 'ielevm' : 'evm')})`
+    executionContext.event.register('contextChanged', async ()=> {
+      self._opts.config.set('compileToIELE', executionContext.isIeleVM())
+      let compileToIELE = document.getElementById('compileToIELE')
+      if (!compileToIELE)  {
+        compileToIELE = await new Promise((resolve, reject)=> {
+          setTimeout(()=> {
+            return resolve(document.getElementById('compileToIELE'))
+          }, 1000)
+        })
+      }
+      if (compileToIELE) {
+        if (executionContext.isIeleVM()) {
+          compileToIELE.setAttribute('checked', '')
+        } else {
+          compileToIELE.removeAttribute('checked')
+        }
       }
     })
   }
@@ -145,18 +159,26 @@ module.exports = class CompileTab {
     if (self._view.el) return self._view.el
     self._view.warnCompilationSlow = yo`<i title="Copy Address" style="display:none" class="${css.warnCompilationSlow} fa fa-exclamation-triangle" aria-hidden="true"></i>`
     self._view.compileIcon = yo`<i class="fa fa-refresh ${css.icon}" aria-hidden="true"></i>`
-    self._view.compileButton = yo`<div class="${css.compileButton}" onclick=${compile} id="compile" title="Compile source code">${self._view.compileIcon} Start to compile (${(executionContext.isIeleVM() ? 'ielevm' : 'evm')})</div>`
+    self._view.compileButton = yo`<div class="${css.compileButton}" onclick=${compile} id="compile" title="Compile source code">${self._view.compileIcon} Start to compile</div>`
     self._view.autoCompile = yo`<input class="${css.autocompile}" onchange=${updateAutoCompile} id="autoCompile" type="checkbox" title="Auto compile">`
+    self._view.compileToIELE = yo`<input class="${css.compileToIELE}" onchange=${updateCompileToIELE} id="compileToIELE" type="checkbox" title="Compile to IELE">`
     if (self.data.autoCompile) self._view.autoCompile.setAttribute('checked', '')
+    if (self.data.compileToIELE) self._view.compileToIELE.setAttribute('checked', '')
     self._view.compileContainer = yo`
       <div class="${css.compileContainer}">
         <div class="${css.compileButtons}">
           ${self._view.compileButton}
-          <div class="${css.autocompileContainer}">
-            ${self._view.autoCompile}
-            <span class="${css.autocompileText}">Auto compile</span>
+          <div class="${css.settingsContainer}">
+            <div class="${css.autocompileContainer}">
+              ${self._view.autoCompile}
+              <span class="${css.autocompileText}">Auto compile</span>
+              ${self._view.warnCompilationSlow}
+            </div>
+            <div class="${css.compileToIELEContainer}">
+              ${self._view.compileToIELE}
+              <span>Compile to IELE</span>
+            </div>
           </div>
-          ${self._view.warnCompilationSlow}
         </div>
       </div>`
     self._view.errorContainer = yo`<div class='error'></div>`
@@ -191,6 +213,7 @@ module.exports = class CompileTab {
       'web3Deploy': 'Copy/paste this code to any JavaScript/Web3 console to deploy this contract'
     }
     function updateAutoCompile (event) { self._opts.config.set('autoCompile', self._view.autoCompile.checked) }
+    function updateCompileToIELE (event) { self._opts.config.set('compileToIELE', self._view.compileToIELE.checked) }
     function compile (event) { self._api.runCompiler() }
     function details () {
       const select = self._view.contractNames
@@ -285,7 +308,7 @@ const css = csjs`
     margin-bottom: 2%;
   }
   .autocompileContainer {
-    width: 92px;
+    width: 100%;
     display: flex;
     align-items: center;
   }
@@ -303,12 +326,19 @@ const css = csjs`
   }
   .warnCompilationSlow {
     color: ${styles.rightPanel.compileTab.icon_WarnCompilation_Color};
-    margin-left: 1%;
+    margin-left: 6px;
+  }
+  .compileToIELEContainer {
+    display: flex;
+    align-items: center;
   }
   .compileButtons {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
+  }
+  .settingsContainer {
+    flex: 1;
   }
   .name {
     display: flex;

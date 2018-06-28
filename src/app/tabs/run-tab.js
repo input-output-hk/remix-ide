@@ -479,6 +479,9 @@ function contractDropdown (events, appAPI, appEvents, opts, self) {
     if (success) {
       selectContractNames.removeAttribute('disabled')
       opts.compiler.visitContracts((contract) => {
+        // @rv: check if contract target vm matches the vm that node is running.
+        const isIeleVM = (contract.object.vm === 'ielevm')
+        if (isIeleVM !== executionContext.isIeleVM()) { return }
         contractNames.appendChild(yo`<option>${contract.name}</option>`)
       })
     } else {
