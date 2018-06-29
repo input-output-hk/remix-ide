@@ -68,7 +68,7 @@ module.exports = {
    */
   unlockAccount: function(address, cb) {
     const passwordEl = yo`<div>
-      <input id="unlock-password-input" type="password" name='prompt_text' class="${css['prompt_text']}" placeholder="please enter your password to unlock your account" >
+      <input id="unlock-password-input" type="password" name='prompt_text' class="${css['prompt_text']}" placeholder="please enter your password to unlock your account" style="width: 100%;" >
     </div>`
     modal(`Unlock account: ${address}`, passwordEl, {
       label: 'Unlock',

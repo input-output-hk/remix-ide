@@ -140,6 +140,9 @@ class ContextualListener {
 
   gasEstimation (node) {
     this._loadContractInfos(node)
+    if (this.contract.vm && this.contract.vm === 'ielevm') { // TODO: @rv: gas estimation for IELE vm
+      return null
+    }
     var executionCost
     var codeDepositCost
     if (node.name === 'FunctionDefinition') {
@@ -162,11 +165,15 @@ class ContextualListener {
     return {executionCost, codeDepositCost}
   }
 
+  // @rv: Yiyi: this file is too ugly...
   _loadContractInfos (node) {
     for (var i in this.nodes) {
       if (this.nodes[i].id === node.attributes.scope) {
-        var contract = this.nodes[i]
-        this.contract = this.results.data.contracts[this.results.source.target][contract.attributes.name]
+        var contractAST = this.nodes[i]
+        this.contract = this.results.data.contracts[this.results.source.target][contractAST.attributes.name]
+        if (this.contract.vm && this.contract.vm === 'ielevm') { // TODO: @rv: support IELE vm
+          return 
+        }
         this.estimationObj = this.contract.evm.gasEstimates
         this.creationCost = this.estimationObj.creation.totalCost
         this.codeDepositCost = this.estimationObj.creation.codeDepositCost

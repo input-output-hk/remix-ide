@@ -34,7 +34,7 @@ var css = csjs`
     position          : absolute;
     display           : flex;
     flex-direction    : column;
-    align-items       : end;
+    align-items       : start;
     top               : 24px;
     left              : 0;
     width             : 250px;

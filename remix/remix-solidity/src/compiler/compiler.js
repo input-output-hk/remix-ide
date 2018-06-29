@@ -456,10 +456,12 @@ function Compiler (handleImportCall) {
           result = JSON.parse(result)
 
           // @rv: add `sourceLanguage` and `vm` fields
-          const contracts = result.contracts[source.target]
-          for (const contractName in contracts) {
-            contracts[contractName]['vm'] = 'evm'
-            contracts[contractName]['sourceLanguage'] = 'solidity'
+          for (const file in result.contracts) {
+            const contracts = result.contracts[file]
+            for (const contractName in contracts) {
+              contracts[contractName]['vm'] = 'evm'
+              contracts[contractName]['sourceLanguage'] = 'solidity'
+            }
           }
         
           if (compileToIELE) {

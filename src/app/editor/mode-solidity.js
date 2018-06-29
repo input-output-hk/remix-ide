@@ -65,7 +65,7 @@ var JavaScriptHighlightRules = function(options) {
         "variable.language":
             "this|bool|string|byte|bytes|bytes0|address|" + intTypes,
         "keyword":
-            "contract|library|constant|event|modifier|" +
+            "contract|library|constant|event|modifier|constructor|" +
             "struct|mapping|enum|break|continue|delete|else|for|function|" +
             "if|new|return|returns|var|while|using|" +
             "private|public|external|internal|storage|memory|payable|view|pure|",

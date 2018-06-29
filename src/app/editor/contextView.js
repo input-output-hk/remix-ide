@@ -123,9 +123,12 @@ class ContextView {
         ${showGasEstimation()}
     </div>`
 
-    function showGasEstimation () {
+    function showGasEstimation () { // @rv: disable it for ielevm. support it in the future.
       if (node.name === 'FunctionDefinition') {
         var result = self._api.contextualListener.gasEstimation(node)
+        if (!result) {
+          return null
+        }
         var executionCost = 'Execution cost: ' + result.executionCost + ' gas'
         var codeDepositCost = 'Code deposit cost: ' + result.codeDepositCost + ' gas'
         var estimatedGas = result.codeDepositCost ? `${codeDepositCost}, ${executionCost}` : `${executionCost}`

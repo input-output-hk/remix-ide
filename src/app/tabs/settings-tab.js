@@ -245,6 +245,8 @@ module.exports = class SettingsTab {
       }
       url = `${self.data.baseurl}/${self.data.selectedVersion}`
     }
+    /*
+    // @rv: this is unnecessary
     var isFirefox = typeof InstallTrigger !== 'undefined'
     if (document.location.protocol !== 'file:' && Worker !== undefined && isFirefox) {
       // Workers cannot load js on "file:"-URLs and we get a
@@ -256,6 +258,10 @@ module.exports = class SettingsTab {
       self._opts.compiler.loadVersion(false, url)
       self.setVersionText('(loading)')
     }
+    */
+   // @rv: we don't use worker
+   self._opts.compiler.loadVersion(false, url)
+   self.setVersionText('(loading)')
   }
   fetchAllVersion (callback) {
     var self = this
