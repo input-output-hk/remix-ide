@@ -370,11 +370,11 @@ module.exports = TxLogger
 // helpers
 
 function txDetails (e, tx, data, obj) {
-  var table = document.querySelector(`#${tx.id} [class^="txTable"]`)
+  var table = tx.querySelector(`[class^="txTable"]`)
   var from = obj.from
   var to = obj.to
-  var log = document.querySelector(`#${tx.id} [class^='log']`)
-  var arrow = document.querySelector(`#${tx.id} [class^='arrow']`)
+  var log = tx.querySelector(`[class^='log']`)
+  var arrow = tx.querySelector(`[class^='arrow']`)
   var arrowUp = yo`<i class="${css.arrow} fa fa-angle-up"></i>`
   var arrowDown = yo`<i class="${css.arrow} fa fa-angle-down"></i>`
   if (table && table.parentNode) {
@@ -385,6 +385,7 @@ function txDetails (e, tx, data, obj) {
     log.removeChild(arrow)
     log.appendChild(arrowUp)
     table = createTable({
+      hash: data.tx.hash,
       status: data.tx.status,
       isCall: data.tx.isCall,
       contractAddress: data.tx.contractAddress,
@@ -398,7 +399,9 @@ function txDetails (e, tx, data, obj) {
       logs: data.logs,
       val: data.tx.value,
       transactionCost: data.tx.transactionCost,
-      executionCost: data.tx.executionCost
+      executionCost: data.tx.executionCost,
+      blockNumber: data.tx.blockNumber,
+      nonce: data.tx.nonce,
     })
     tx.appendChild(table)
   }
@@ -422,7 +425,7 @@ function createTable (opts) {
 
   var contractAddress = yo`
     <tr class="${css.tr}">
-      <td class="${css.td}"> contractAddress </td>
+      <td class="${css.td}"> contract address </td>
       <td class="${css.td}">${opts.contractAddress}
         ${copyToClipboard(() => opts.contractAddress)}
       </td>
@@ -493,13 +496,37 @@ function createTable (opts) {
 
   var hash = yo`
     <tr class="${css.tr}">
-      <td class="${css.td}"> hash </td>
+      <td class="${css.td}"> transaction hash </td>
       <td class="${css.td}">${opts.hash}
         ${copyToClipboard(() => opts.hash)}
       </td>
     </tr>
   `
   if (opts.hash) table.appendChild(hash)
+
+  if (opts.blockNumber) {
+    const blockNumber = yo`
+    <tr class="${css.tr}">
+      <td class="${css.td}"> block number </td>
+      <td class="${css.td}">${opts.blockNumber}
+        ${copyToClipboard(() => opts.blockNumber)}
+      </td>
+    </tr>
+  `
+    table.appendChild(blockNumber)
+  }
+
+  if (opts.nonce) {
+    const nonce = yo`
+    <tr class="${css.tr}">
+      <td class="${css.td}"> nonce </td>
+      <td class="${css.td}">${opts.nonce}
+        ${copyToClipboard(() => opts.nonce)}
+      </td>
+    </tr>
+  `
+    table.appendChild(nonce)
+  }
 
   var input = yo`
     <tr class="${css.tr}">

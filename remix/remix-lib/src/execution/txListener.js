@@ -73,7 +73,9 @@ class TxListener {
         from: from,
         to: to,
         input: data,
-        hash: txResult.transactionHash ? txResult.transactionHash : 'call' + (from || '') + to + data,
+        hash: txResult.transactionHash,
+        // @rv: hash here should just be undefined because it's a `call` 
+        // hash: txResult.transactionHash ? txResult.transactionHash : 'call' + (from || '') + to + data,
         isCall: true,
         returnValue,
         envMode: executionContext.getProvider()
@@ -313,6 +315,7 @@ class TxListener {
     const isIeleVM = !!(contract.object.vm === 'ielevm')
     const abi = contract.object.abi
     const inputData = tx.input.replace('0x', '')
+    // console.log('* contract: ', contract)
     // console.log('* isIeleVM: ', isIeleVM)
     // console.log('* abi: ', abi)
     // console.log('* inputData: ', inputData)
