@@ -561,7 +561,8 @@ function settings (container, appAPI, appEvents, opts) {
     <div id="account-extra-section">
       <div class="${css.crow}">
         <div class="${css.rvButton}" style="margin-bottom:0;margin-left:0;" onclick=${exportPrivateKey}>Export private key</div>
-        <div class="${css.rvButton}" style="margin-bottom:0;"onclick=${removeAccount}>Remove account</div>
+        <div class="${css.rvButton}" style="margin-bottom:0;" onclick=${removeAccount}>Remove account</div>
+        <div class="${css.rvButton}" style="margin-bottom:0;" onclick=${sendCustomTransaction}>Send transaction</div>
       </div>  
       <div class="${css.crow}">
         <div class="${css.rvButton}" style="margin-left:0;background-color:hsla(45, 100%, 75%, 0.5);" onclick=${importAccount}>Import account</div>
@@ -654,6 +655,23 @@ function settings (container, appAPI, appEvents, opts) {
           fillAccountsList(appAPI, opts, document.body)
         }
       }) 
+    }
+  }
+
+  // @rv: send transaction
+  function sendCustomTransaction() {
+    const $txOrigin = $('#txorigin')
+    const address = $txOrigin.val()
+    if (address === 'unknown' || !address) {
+      addTooltip('No account selected')
+    } else {
+      opts.udapp.sendCustomTransaction(address, (error)=> {
+        if (error) {
+          appAPI.logMessage(`transact from ${address} errored: ${error}`)
+        } else {
+          // Do nothing.
+        }
+      })
     }
   }
 

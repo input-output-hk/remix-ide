@@ -16,7 +16,7 @@ var css = csjs`
   }
 `
 
-function confirmDialog (tx, amount, gasEstimation, self, newGasPriceCb, initialParamsCb) {
+function confirmDialog (tx, amount, gasEstimation, self, network, newGasPriceCb, initialParamsCb) {
   var onGasPriceChange = function () {
     var gasPrice = el.querySelector('#gasprice').value
     newGasPriceCb(gasPrice, (txFeeText, priceStatus) => {
@@ -27,7 +27,7 @@ function confirmDialog (tx, amount, gasEstimation, self, newGasPriceCb, initialP
 
   var el = yo`
   <div>
-    <div>You are creating a transaction on the main network. Click confirm if you are sure to continue.</div>
+    <div>You are creating a transaction on the ${network.name} network. Click confirm if you are sure to continue.</div>
     <div class=${css.txInfoBox}>
       <div>From: ${tx.from}</div>
       <div>To: ${tx.to ? tx.to : '(Contract Creation)'}</div>

@@ -71,13 +71,15 @@ TxRunner.prototype._sendTransaction = function (sendTx, tx, pass, chainId, priva
       // console.log('* gasPrice: ', parseInt(tx.gasPrice))
       // console.log('* value: ', tx.value)
       // console.log('* chainId: ', chainId)
+      // console.log('* data: ', tx.data)
       // console.log('* p: ', privateKey.toString('hex'))
-      const newTx = {
-        nonce: new BN(nonce),
-        gasPrice: new BN(parseInt(tx.gasPrice) || 5000000000), // default: 5 gwei
-        gasLimit: new BN(tx.gas || 3000000),
+      // console.log('enter here 1')
+      const newTx = { // @rv: BigNumber.js hex string has bug
+        nonce: new BN(nonce.toString(10)),
+        gasPrice: new BN((parseInt(tx.gasPrice) || 5000000000).toString(10)), // default: 5 gwei
+        gasLimit: new BN((tx.gas || 3000000).toString(10)),
         to: tx.to,
-        value: new BN(parseInt(tx.value) || 0, 10),
+        value: new BN(parseInt(tx.value).toString(10) || '0'),
         data: new Buffer(tx.data.slice(2), 'hex'),
         chainId: 0
         // chainId: 0x3d  // <= this will give me error.
@@ -89,8 +91,6 @@ TxRunner.prototype._sendTransaction = function (sendTx, tx, pass, chainId, priva
       ethTx.sign(privateKey)
       const serializedTx = ethTx.serialize()  
       args = ["0x" + serializedTx.toString('hex'), cb]
-      // console.log('* binary data: ', "0x" + serializedTx.toString('hex'))
-      // console.log('* rawTransaction: ', args[0])
       sendTx = executionContext.web3().eth.sendRawTransaction
     }
     sendTx.apply({}, args)

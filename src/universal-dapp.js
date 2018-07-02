@@ -21,6 +21,7 @@ var typeConversion = remixLib.execution.typeConversion
 var confirmDialog = require('./app/execution/confirmDialog')
 
 var keythereum = require("keythereum")
+var RLP = require('rlp')
 
 /*
   trigger debugRequested
@@ -313,7 +314,7 @@ UniversalDApp.prototype.getInputs = function (funABI) {
 }
 
 /**
- * @param {{useCall: boolean, value:string, data: {dataHex:string, funAbi:object, funArgs:string[], contractByteCode: string, contractName: string, contract: object}, to?:string}} args
+ * @param {{useCall: boolean, value:string, data: {dataHex:string, funAbi:object, funArgs:string[], contractByteCode: string, contractName: string, contract: object}, from?:string, to?:string}} args
  * @param {function} cb
  */
 UniversalDApp.prototype.runTx = function (args, cb) {
@@ -397,6 +398,7 @@ UniversalDApp.prototype.runTx = function (args, cb) {
     },
     function runTransaction (fromAddress, value, gasLimit, privateKey, next) {
       // console.log('@universal-dapp.js runTransaction')
+      // console.log('* privateKey: ', privateKey)
       // console.log('* fromAddress: ', fromAddress)
       // console.log('* value: ', value)
       // console.log('* gasLimit: ', gasLimit)
@@ -423,7 +425,7 @@ UniversalDApp.prototype.runTx = function (args, cb) {
             return continueTxExecution(null)
           }
           var amount = executionContext.web3().fromWei(typeConversion.toInt(tx.value), 'ether')
-          var content = confirmDialog(tx, amount, gasEstimation, self,
+          var content = confirmDialog(tx, amount, gasEstimation, self, network,
             (gasPrice, cb) => {
               let txFeeText, priceStatus
               // TODO: this try catch feels like an anti pattern, can/should be
@@ -521,6 +523,47 @@ UniversalDApp.prototype.removeAccount = function(address, cb) {
   const accounts = this._api.config.get('rv-accounts') || []
   this._api.config.set('rv-accounts', accounts.filter((x)=> typeof(x) === 'object' && x.address !== address.replace(/^0x/, ''))) // remove address from accounts
   return cb(null)
+}
+
+/**
+ * @rv: send custom transaction
+ * @param {string} address 
+ * @param {(error)=>void} cb
+ */
+UniversalDApp.prototype.sendCustomTransaction = function(address, cb) {
+  modalCustom.sendCustomTransaction(address, (error, {to, value, dataHex})=> {
+    if (error) {
+      return cb(error)
+    }
+
+    const web3 = executionContext.web3()
+    if (!web3.isAddress(to)) {
+      return cb(`Invalid recipient address: ${to}`)
+    }
+
+    value = parseFloat(value || '0')
+    if (isNaN(value)) {
+      return cb(`Invalid amount: ${value}`)
+    } else { // convert from ether to wei
+      value = value * 1000000000000000000
+    }
+
+    dataHex = dataHex.trim()
+    if (dataHex.length && !dataHex.startsWith('0x')) {
+      dataHex = '0x' + dataHex
+    }
+    if (executionContext.isIeleVM() && (!dataHex || parseInt(dataHex) === 0)) {
+      dataHex = RLP.encode(["deposit", []]).toString('hex')
+    }
+
+    const from = address
+    this._api.logMessage(`transact from ${from} to ${to} pending ...`)
+    this.runTx({from, to, value, data: {dataHex}}, (error, hash)=> {
+      if (error) {
+        return cb(error)
+      }
+    })
+  })
 }
 
 /**

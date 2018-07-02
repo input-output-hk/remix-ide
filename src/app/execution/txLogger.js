@@ -393,6 +393,7 @@ function txDetails (e, tx, data, obj) {
       from,
       to,
       gas: data.tx.gas,
+      gasPrice: data.tx.gasPrice,
       input: helper.shortenHexData(data.tx.input),
       'decoded input': data.resolvedData && data.resolvedData.params ? JSON.stringify(typeConversion.stringify(data.resolvedData.params), null, '\t') : ' - ',
       'decoded output': data.resolvedData && data.resolvedData.decodedReturnValue ? JSON.stringify(typeConversion.stringify(data.resolvedData.decodedReturnValue), null, '\t') : ' - ',
@@ -469,6 +470,19 @@ function createTable (opts) {
     </tr>
   `
   if (opts.gas) table.appendChild(gas)
+
+  // @rv: gasPrice
+  if (opts.gasPrice) {
+    const gasPrice = yo`
+    <tr class="${css.tr}">
+      <td class="${css.td}"> gas price </td>
+      <td class="${css.td}">${opts.gasPrice.toString()} gas
+        ${copyToClipboard(() => opts.gasPrice.toString())}
+      </td>
+    </tr>
+  `
+    table.appendChild(gasPrice)
+  }
 
   var callWarning = ''
   if (opts.isCall) {

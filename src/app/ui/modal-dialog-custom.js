@@ -201,6 +201,40 @@ module.exports = {
         return cb('Connection cancelled', {})
       }
     })
+  },
+
+  /**
+   * @rv: send custom transaction
+   * @param {string} from
+   * @param {(error: string, {to?: string, value?: string, dataHex?: string})=>void} cb
+   */
+  sendCustomTransaction: function(from, cb) {
+    const customTransactionPanel = yo`<div>
+      <p>From: ${from}</p>
+      <input id="custom-transaction-recipient-address-input" type="text" name='prompt_text' class="${css['prompt_text']}" placeholder="Recipient Address" >
+      <br><br>
+      <input id="custom-transaction-amount-input" type="text" name='prompt_text' class="${css['prompt_text']}" placeholder="Amount (ether)" >
+      <br><br>
+      <input id="custom-transaction-data-input" type="text" name='prompt_text' class="${css['prompt_text']}" placeholder="Transaction Data 0x01234 (optional)" >
+    </div>`
+    modal('Send Transaction', customTransactionPanel, {
+      'label': 'Next',
+      fn: ()=> {
+        const to = customTransactionPanel.querySelector('#custom-transaction-recipient-address-input').value
+        const value = customTransactionPanel.querySelector('#custom-transaction-amount-input').value
+        const dataHex = customTransactionPanel.querySelector('#custom-transaction-data-input').value
+        return cb(null, {
+          to, 
+          value,
+          dataHex
+        })
+      }
+    }, {
+      'label': 'Cancel',
+      fn: ()=> {
+        return cb('Transaction cancelled', {})
+      }
+    })
   }
 }
 
