@@ -201,7 +201,7 @@ UniversalDApp.prototype.call = function (isUserAction, args, value, lookupOnly, 
     if (!error) {
       if (isUserAction) {
         if (!args.funABI.constant) {
-          self._api.logMessage(`${logMsg} pending ... `)
+          self._api.logMessage(`${logMsg} pending... `)
         } else {
           self._api.logMessage(`${logMsg}`)
         }
@@ -557,7 +557,7 @@ UniversalDApp.prototype.sendCustomTransaction = function(address, cb) {
     }
 
     const from = address
-    this._api.logMessage(`transact from ${from} to ${to} pending ...`)
+    this._api.logMessage(`transact from ${from} to ${to} pending...`)
     this.runTx({from, to, value, data: {dataHex}}, (error, hash)=> {
       if (error) {
         return cb(error)

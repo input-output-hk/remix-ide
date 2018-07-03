@@ -217,7 +217,7 @@ var css = csjs`
 
   .rvButton {
     ${styles.rightPanel.runTab.button_atAddress}
-    width: 110px;
+    width: 122px;
     margin: 4px;
   }
 `

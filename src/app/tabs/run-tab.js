@@ -567,7 +567,7 @@ function settings (container, appAPI, appEvents, opts) {
       <div class="${css.crow}">
         <div class="${css.rvButton}" style="margin-left:0;background-color:hsla(45, 100%, 75%, 0.5);" onclick=${importAccount}>Import account</div>
         <div class="${css.rvButton}" style="background-color:hsla(45, 100%, 75%, 0.5);" onclick=${newAccount}>Create account</div>
-        <div class="${css.rvButton}" style="background-color:hsla(45, 100%, 75%, 0.5);" onclick=${openFaucet}>Open faucet</div>
+        <div class="${css.rvButton}" style="background-color:hsla(45, 100%, 75%, 0.5);" onclick=${requestFromFaucet} id="request-from-faucet-btn">Request from Faucet</div>
       </div>
     </div>
   `
@@ -632,13 +632,42 @@ function settings (container, appAPI, appEvents, opts) {
   }
 
   // @rv: open faucet website
-  function openFaucet() {
-    const context = executionContext.getProvider()
-    if (context === 'custom-rpc-kevm-testnet') {
-      window.open('http://testnet.iohkdev.io/goguen/faucet/#faucet-register', '_blank')
-    } else {
-      addTooltip('No faucet found for ' + context)
+  function requestFromFaucet() {
+    const $txOrigin = $('#txorigin')
+    const address = $txOrigin.val()
+    if (address === 'unknown' || !address) {
+      return addTooltip('No account selected')
     }
+    const context = executionContext.getProvider()
+    let targetUrl = '',
+        txLink = ''
+    if (context === 'custom-rpc-kevm-testnet') {
+      targetUrl = `https://kevm-testnet.iohkdev.io:8099/faucet?address=${address}`
+      txLink = `https://kevm-testnet.iohkdev.io/transaction/`
+    } else if (context === 'custom-rpc-iele-testnet-dev') {
+      targetUrl = `https://staging.iele-private.mantis.iohkdev.io:8099/faucet?address=${address}` 
+      txLink = `https://staging.iele-private.mantis.iohkdev.io/transaction/`
+    } else {
+      return addTooltip('No faucet found for ' + context)
+    }
+    appAPI.logMessage(`request from Faucet pending...`)
+    window['fetch'](targetUrl, {
+      method: 'POST',
+      cors: true
+    }).then((response)=> {
+      return response.text()
+    }).then((receipt)=> {
+      if (!isNaN(receipt)) {
+        txLink = `${txLink}${receipt}`
+        appAPI.logMessage(`your transaction has been successful and funds have been sent to your wallet`)
+        appAPI.logHtmlMessage(yo`<a href="${txLink}" target="_blank">${txLink}</a>`)
+        updateAccountBalances(container, appAPI)
+      } else {
+        throw receipt
+      }
+    }).catch((error)=> {
+      appAPI.logMessage(`request from Faucet errored: ${error}`)
+    })
   }
 
   // @rv: remove account
@@ -772,7 +801,7 @@ function settings (container, appAPI, appEvents, opts) {
     })
 
     addIfNotExists({
-      name: 'IELE Testnet (dev)',
+      name: 'IELE Testnet (staging)',
       context: 'custom-rpc-iele-testnet-dev',
       chainId: undefined,
       rpcUrl: 'https://staging-iele.kevm-private.mantis.iohkdev.io:8546/',
@@ -790,6 +819,14 @@ function toggleRVElements() {
   if (executionContext.isCustomRPC()) {
     $('#account-extra-section').show()
     $('#remove-custom-rpc-icon').show()
+
+    const context = executionContext.getProvider()
+    if (context === 'custom-rpc-kevm-testnet' || 
+        context === 'custom-rpc-iele-testnet-dev') {
+      $('#request-from-faucet-btn').show()
+    } else {
+      $('#request-from-faucet-btn').hide()
+    }
   } else {
     $('#account-extra-section').hide()
     $('#remove-custom-rpc-icon').hide()
