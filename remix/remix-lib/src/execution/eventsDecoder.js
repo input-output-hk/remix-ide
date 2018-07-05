@@ -118,12 +118,12 @@ class EventsDecoder {
                 type: abi.inputs.types[0]
               }
             }
-            console.log('- flippedData: ', flippedData)
-            console.log('- type: ', type)
+            // console.log('- flippedData: ', flippedData)
+            // console.log('- type: ', type)
             if (type) {
-              const stringResult = ieleTranslator.decode(flippedData, type).stringResult
-              console.log('- stringResult: ', stringResult)
-              events.push({ from: log.address, topic: topicId, event: abi.event, args: stringResult })
+              const result = ieleTranslator.decode(flippedData, type).result
+              // console.log('- result: ', result)
+              events.push({ from: log.address, topic: topicId, event: abi.event, args: result })
             }
           } 
           // else {

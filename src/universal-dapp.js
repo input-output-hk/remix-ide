@@ -223,10 +223,13 @@ UniversalDApp.prototype.call = function (isUserAction, args, value, lookupOnly, 
               if (args.sourceLanguage === 'solidity') { // solidity language
                 // decode results for solidity
                 const ieleTranslator = remixLib.execution.ieleTranslator 
-                const results = returnValue.map((val, i)=> ieleTranslator.decode(val, args.funABI.outputs[i]).stringResult )
+                const results = returnValue.map((val, i)=> ieleTranslator.decode(val, args.funABI.outputs[i]).result)
                 const resultElement = document.createElement('ul')
                 results.forEach((result, i)=> {
                   const liElement = document.createElement('li')
+                  if (typeof(result) === 'object') {
+                    result = JSON.stringify(result)
+                  }
                   liElement.innerText = `${i}: ${args.funABI.outputs[i].type}: ${args.funABI.outputs[i].name} ${result}`
                   liElement.style.listStyle = 'none'
                   liElement.style.marginLeft = '12px'
@@ -269,7 +272,7 @@ UniversalDApp.prototype.call = function (isUserAction, args, value, lookupOnly, 
 /**
   * deploy the given contract
   *
-  * @param {{dataHex: string, funAbi: object, funArgs: string[], contractByteCode: string, contractName: string, contract: object}} data    - data to send with the transaction ( return of txFormat.buildData(...) ).
+  * @param {{dataHex: string, funAbi: object, funArgs: string[], contractByteCode: string, contractName: string, sourceLanguage: string, vm: string}} data    - data to send with the transaction ( return of txFormat.buildData(...) ).
   * @param {function} callback    - callback.
   */
 UniversalDApp.prototype.createContract = function (data, callback) {
@@ -283,7 +286,7 @@ UniversalDApp.prototype.createContract = function (data, callback) {
   * call the current given contract
   *
   * @param {string} to    - address of the contract to call.
-  * @param {{dataHex: string, funAbi: object, funArgs: string[], contractByteCode: string, contractName: string, contract: object}} data    - data to send with the transaction ( return of txFormat.buildData(...) ).
+  * @param {{dataHex: string, funAbi: object, funArgs: string[], contractByteCode: string, contractName: string, sourceLanguage: string, vm: string}} data    - data to send with the transaction ( return of txFormat.buildData(...) ).
   * @param {object} funAbi    - abi definition of the function to call.
   * @param {function} callback    - callback.
   */
@@ -314,7 +317,7 @@ UniversalDApp.prototype.getInputs = function (funABI) {
 }
 
 /**
- * @param {{useCall: boolean, value:string, data: {dataHex:string, funAbi:object, funArgs:string[], contractByteCode: string, contractName: string, contract: object}, from?:string, to?:string}} args
+ * @param {{useCall: boolean, value:string, data: {dataHex:string, funAbi:object, funArgs:string[], contractByteCode: string, contractName: string, sourceLanguage: string, vm: string}, from?:string, to?:string}} args
  * @param {function} cb
  */
 UniversalDApp.prototype.runTx = function (args, cb) {
@@ -404,7 +407,7 @@ UniversalDApp.prototype.runTx = function (args, cb) {
       // console.log('* gasLimit: ', gasLimit)
       // console.log('* args: ', args)
       var tx = { to: args.to, data: args.data.dataHex, useCall: args.useCall, from: fromAddress, value: value, gasLimit: gasLimit, privateKey: privateKey }
-      var payLoad = { funAbi: args.data.funAbi, funArgs: args.data.funArgs, contractBytecode: args.data.contractBytecode, contractName: args.data.contractName }
+      var payLoad = { funAbi: args.data.funAbi, funArgs: args.data.funArgs, contractBytecode: args.data.contractBytecode, contractName: args.data.contractName, sourceLanguage: args.data.sourceLanguage, vm: args.data.vm }
       var timestamp = Date.now()
 
       // @rv: pass chainId to `tx`
@@ -499,7 +502,7 @@ UniversalDApp.prototype.runTx = function (args, cb) {
         },
         function (error, result) {
           let eventName = (tx.useCall ? 'callExecuted' : 'transactionExecuted')
-          self.event.trigger(eventName, [error, tx.from, tx.to, tx.data, tx.useCall, result, timestamp, payLoad, args.data.contract])
+          self.event.trigger(eventName, [error, tx.from, tx.to, tx.data, tx.useCall, result, timestamp, payLoad])
 
           if (error && (typeof (error) !== 'string')) {
             if (error.message) error = error.message

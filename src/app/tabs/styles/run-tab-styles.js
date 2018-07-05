@@ -70,6 +70,7 @@ var css = csjs`
     ${styles.rightPanel.runTab.dropdown_RunTab}
     font-weight: normal;
     width: 250px;
+    text-align: left;
   }
   .instanceContainer {
     ${styles.rightPanel.runTab.box_Instance}
@@ -199,7 +200,7 @@ var css = csjs`
     color: grey;
     width: 100%;
     height: 100%;
-    padding-right: 28px;
+    padding-right: 40px;
     pointer-events: none;
   }
   .networkItem {

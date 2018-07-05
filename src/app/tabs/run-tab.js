@@ -439,6 +439,12 @@ function contractDropdown (events, appAPI, appEvents, opts, self) {
       appAPI.logMessage(msg)
     }, (data, runTxCallback) => {
       // called for libraries deployment
+      // console.log('@librarise deployment: ', data)
+      // console.log('@selectedContract: ', selectedContract)
+
+      // @rv: add sourceLanguage and vm information
+      data.data.sourceLanguage = selectedContract.contract.object.sourceLanguage
+      data.data.vm = selectedContract.contract.object.vm
       opts.udapp.runTx(data, runTxCallback)
     })
   }

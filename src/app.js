@@ -649,6 +649,7 @@ Please make a backup of your contracts and start using http://remix.ethereum.org
           modalDialogCustom.alert('Failed to store example contract in browser. Remix will not work properly. Please ensure Remix has access to LocalStorage. Safari in Private mode is known not to work.')
         } else {
           filesProviders['browser'].set(examples.ballot_test.name, examples.ballot_test.content)
+          filesProviders['browser'].set(examples.assert.name, examples.assert.content) // @rv: add assert.sol file
         }
       }
     })

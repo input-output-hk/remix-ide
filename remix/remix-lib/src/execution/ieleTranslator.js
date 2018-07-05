@@ -97,9 +97,9 @@ function encode(value, type) {
     return '0x' + returnValue + arraySizeHex + arraySizeBytesHex
     
   } else if (t === 'bool') {
-    if (value === 'true') {
+    if (value === 'true' || value === true) {
       return '0x01'
-    } else if (value === 'false') {
+    } else if (value === 'false' || value === false) {
       return '0x00'
     } else {
       throw (`IeleTranslator error: Invalid value ${value} with type ${JSON.stringify(type)}.` )
@@ -179,7 +179,7 @@ function encode(value, type) {
  * Decode an IELE value to (Solidity) value
  * @param {string} value encoded IELE hex string
  * @param {{type: string, components?:object[]}} type
- * @return {{result: any, stringResult: string, rest: string}} 
+ * @return {{result: any, rest: string}} 
  */
 function decode(value, type) {
   if (typeof(value) !== 'string') {
@@ -200,7 +200,6 @@ function decode(value, type) {
     }
     if (otype.match(/^u?int(\d*)$/)) {
       const resultArr = []
-      const stringResultArr = []
       let rest = value
       for (let i = 0; i < arraySize; i++) {
         const j = rest.length - 16
@@ -209,36 +208,29 @@ function decode(value, type) {
         const t = decode(v, {type: otype})
         rest = rest.slice(0, j - bytesSize * 2)
         resultArr.push(t.result)
-        stringResultArr.push(t.stringResult)
       }
       return {
         rest, 
         result: resultArr,
-        stringResult: '[' + stringResultArr.join(', ') + ']'
       }
     } else {
       const resultArr = []
-      const stringResultArr = []
       let rest = value 
       for (let i = 0; i < arraySize; i++) {
         const t = decode(rest, {type: otype, components: type.components})
         rest = t.rest
         resultArr.push(t.result)
-        stringResultArr.push(t.stringResult)
       }
       return {
         rest, 
         result: resultArr,
-        stringResult: '[' + stringResultArr.join(', ') + ']'
       }
     }
   } else if (t === 'bool') {
     const result = (!!parseInt(value.slice(value.length - 2, value.length)))
-    const stringResult = result.toString()
     const rest = value.slice(0, value.length - 2);
     return {
       result, 
-      stringResult,
       rest
     }
   } else if (t === 'address') {
@@ -247,27 +239,21 @@ function decode(value, type) {
       result = '0' + result
     }
     result = '0x' + result
-    const stringResult = result
     const rest = value.slice(0, value.length - 40)
     return {
       result,
-      stringResult,
       rest
     }
   } else if (t.match(/^uint/)) {
     const result = parseInt(value, 16)
-    const stringResult = result.toString()
     return {
       result,
-      stringResult,
       rest: ''
     }
   } else if (t.match(/^int/)) {
     const result = hexToInt(value)
-    const stringResult = result.toString()
     return {
       result,
-      stringResult,
       rest: ''
     }
   } else if (t.match(/^(byte|bytes\d+)$/)) { // Fixed-size byte array
@@ -277,28 +263,23 @@ function decode(value, type) {
       result = '0' + result
     }
     result = '0x' + result
-    const stringResult = result
     const rest = value.slice(0, value.length - bytesSize * 2)
     return {
       result,
-      stringResult,
       rest
     }
   } else if (t.match(/^(string|bytes)$/)) {
     const i = value.length - 16
     const bytesSize = parseInt(value.slice(i, value.length), 16)
     const result = hex2a(value.slice(i - bytesSize * 2, i))
-    const stringResult = '"' + result + '"' 
     const rest = value.slice(0, i - bytesSize * 2)
     return {
       result,
-      stringResult,
       rest
     }
   } else if (t === 'tuple') {
     const components = type.components
     const resultArr = []
-    const stringResultArr = []
     let rest = value
     components.forEach((component, i)=> {
       let t
@@ -306,18 +287,15 @@ function decode(value, type) {
         component = Object.assign({}, component, {type: component['type'] + '[1]'})
         t = decode(rest, component)
         t.result = t.result[0]
-        t.stringResult = t.stringResult.replace(/^\[/, '').replace(/\]$/, '')
       } else {
         t = decode(rest, component)
       }
       rest = t.rest
       resultArr.push(t.result)
-      stringResultArr.push(t.stringResult)
     })
     return {
       rest,
       result: resultArr,
-      stringResult: '[' + stringResultArr.join(', ') + ']'
     }
   } else {
     throw (`IeleTranslator Decode error: Invalid value ${value} with type ${JSON.stringify(type)}.`)

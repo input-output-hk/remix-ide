@@ -384,6 +384,14 @@ function txDetails (e, tx, data, obj) {
   } else {
     log.removeChild(arrow)
     log.appendChild(arrowUp)
+    let decodedOutput = data.resolvedData && data.resolvedData.decodedOutput ? JSON.stringify(typeConversion.stringify(data.resolvedData.decodedOutput), null, '\t') : ' - '
+    if (data.tx.decodedOutput) { // @rv: check `callExecuted` event in txListener.js
+      decodedOutput = JSON.stringify(typeConversion.stringify(data.tx.decodedOutput), null, '\t')
+    }
+    let decodedInput = data.resolvedData && data.resolvedData.params ? JSON.stringify(typeConversion.stringify(data.resolvedData.params), null, '\t') : ' - '
+    if (data.tx.params) {
+      decodedInput = JSON.stringify(typeConversion.stringify(data.tx.params), null, '\t')
+    }
     table = createTable({
       hash: data.tx.hash,
       status: data.tx.status,
@@ -394,9 +402,10 @@ function txDetails (e, tx, data, obj) {
       to,
       gas: data.tx.gas,
       gasPrice: data.tx.gasPrice,
-      input: helper.shortenHexData(data.tx.input),
-      'decoded input': data.resolvedData && data.resolvedData.params ? JSON.stringify(typeConversion.stringify(data.resolvedData.params), null, '\t') : ' - ',
-      'decoded output': data.resolvedData && data.resolvedData.decodedReturnValue ? JSON.stringify(typeConversion.stringify(data.resolvedData.decodedReturnValue), null, '\t') : ' - ',
+      input: data.tx.input,
+      output: data.tx.output,
+      'decoded input': decodedInput,
+      'decoded output': decodedOutput,
       logs: data.logs,
       val: data.tx.value,
       transactionCost: data.tx.transactionCost,
@@ -545,7 +554,7 @@ function createTable (opts) {
   var input = yo`
     <tr class="${css.tr}">
       <td class="${css.td}"> input </td>
-      <td class="${css.td}">${opts.input}
+      <td class="${css.td}">${helper.shortenHexData(opts.input)}
         ${copyToClipboard(() => opts.input)}
       </td>
     </tr>
@@ -561,6 +570,18 @@ function createTable (opts) {
       </td>
     </tr>`
     table.appendChild(inputDecoded)
+  }
+
+  if (opts['output']) {
+    const output = yo`
+    <tr class="${css.tr}">
+      <td class="${css.td}"> output </td>
+      <td class="${css.td}">${helper.shortenHexData(opts.output)}
+        ${copyToClipboard(() => opts.output)}
+      </td>
+    </tr>
+  `
+    table.appendChild(output)
   }
 
   if (opts['decoded output']) {

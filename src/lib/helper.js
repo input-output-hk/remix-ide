@@ -7,7 +7,8 @@ module.exports = {
   },
   shortenHexData: function (data) {
     if (!data) return ''
-    if (data.length < 5) return data
+    // if (data.length < 5) return data
+    if (data.length < 11) return data // @rv: we fix this logic
     var len = data.length
     return data.slice(0, 5) + '...' + data.slice(len - 5, len)
   },

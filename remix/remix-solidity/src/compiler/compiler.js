@@ -104,11 +104,11 @@ function Compiler (handleImportCall) {
       messages.push(t.join('\n').trim())
     }
     return messages.map((message)=> {
+      const isWarning = message.match(/^([^:]*):([0-9]*):(([0-9]*):)?\s+Warning\:\s+/)
       return {
         component: 'general',
         formattedMessage: message,
-        severity: 'warning',
-        type: 'Warning',
+        severity: (isWarning ? 'warning' : 'error'),
         message
       }
     })
@@ -248,8 +248,7 @@ function Compiler (handleImportCall) {
         error: {
           component: 'general',
           formattedMessage: message,
-          severity: 'warning',
-          type: 'Warning',
+          severity: 'error',
           message
         }
       })
@@ -264,14 +263,8 @@ function Compiler (handleImportCall) {
       return [{
         component: 'general',
         formattedMessage: message,
-        severity: 'warning',
-        type: 'Warning',
+        severity: 'error',
         message: message,
-        sourceLocation: {
-          start, // @rv: `sourceLocation` is not even used. Check renderer.js error function.
-          end,
-          file: target
-        }
       }]
     } else {
       return undefined
@@ -404,7 +397,7 @@ function Compiler (handleImportCall) {
         inputs: parameters.map((parameter)=> {
           return {
             name: parameter,
-            type: 'arbitrary-width signed integer'
+            type: 'int'
           }
         }),
         type
@@ -463,7 +456,7 @@ function Compiler (handleImportCall) {
               contracts[contractName]['sourceLanguage'] = 'solidity'
             }
           }
-        
+
           if (compileToIELE) {
             return compileSolidityToIELE(result, source, (result)=> {
               return compilationFinished(result, missingInputs, source)
@@ -475,7 +468,7 @@ function Compiler (handleImportCall) {
           result = { error: 'Uncaught JavaScript exception:\n' + exception }
         }
 
-        // console.log('@compilationFinished 5')
+        // console.log('@compilationFinished: ', result)
         compilationFinished(result, missingInputs, source)
       }
       onCompilerLoaded(compiler.version())
@@ -677,15 +670,20 @@ function Compiler (handleImportCall) {
   }
 
   function gatherImports (files, target, importHints, cb) {
+    // console.log('@gatherImports')
+    // console.log('* files: ', files)
+    // console.log('* target: ', target)
+    // console.log('* importHints: ', importHints)
     importHints = importHints || []
 
     // FIXME: This will only match imports if the file begins with one.
     //        It should tokenize by lines and check each.
     // eslint-disable-next-line no-useless-escape
-    var importRegex = /^\s*import\s*[\'\"]([^\'\"]+)[\'\"];/g
+    // var importRegex = /^\s*import\s*[\'\"]([^\'\"]+)[\'\"];/g  // @rv: This regexp is wrong
 
     for (var fileName in files) {
-      var match
+      let match
+      const importRegex = /[\s^]import\s*[\'\"]([^\'\"]+)[\'\"]\s*;/g
       while ((match = importRegex.exec(files[fileName].content))) {
         var importFilePath = match[1]
         if (importFilePath.startsWith('./')) {

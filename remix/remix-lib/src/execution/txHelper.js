@@ -28,10 +28,18 @@ module.exports = {
     if (vm === 'ielevm') {
       if (sourceLanguage === 'iele') {
         return args.map((x)=> {
+          if (typeof(x) === 'number') {
+            x = x.toString(10)
+          }
+
           if (x.startsWith('0x')) {
             return x
           } else if (!isNaN(x)) {
-            return '0x' + parseInt(x).toString(16)
+            if (x.startsWith('-')) {
+              return ieleTranslator.encode(x, {type: 'int'})
+            } else {
+              return '0x' + parseInt(x).toString(16)
+            }
           } else {
             return '0x' + x
           }

@@ -242,12 +242,13 @@ module.exports = {
         contractBytecode = contract.evm.bytecode.object
         var bytecodeToDeploy = contract.evm.bytecode.object
         if (bytecodeToDeploy.indexOf('_') >= 0) {
+          // console.log('* link library: ', bytecodeToDeploy)
           this.linkBytecode(contract, contracts, (err, bytecode) => {
             if (err) {
               callback('Error deploying required libraries: ' + err)
             } else {
               bytecodeToDeploy = bytecode + dataHex
-              return callback(null, {dataHex: bytecodeToDeploy, funAbi, funArgs, contractBytecode, contractName, contract})
+              return callback(null, {dataHex: bytecodeToDeploy, funAbi, funArgs, contractBytecode, contractName, sourceLanguage: contract.sourceLanguage, vm: contract.vm})
             }
           }, callbackStep, callbackDeployLibrary)
           return
@@ -272,7 +273,7 @@ module.exports = {
         dataHex = helper.encodeFunctionId(funAbi) + dataHex
       }
     }
-    callback(null, { dataHex, funAbi, funArgs, contractBytecode, contractName, contract })
+    callback(null, { dataHex, funAbi, funArgs, contractBytecode, contractName, sourceLanguage: contract.sourceLanguage, vm: contract.vm })
   },
 
   linkBytecodeStandard: function (contract, contracts, callback, callbackStep, callbackDeployLibrary) {
@@ -404,6 +405,7 @@ module.exports = {
     return solcLinker.linkBytecode(bytecodeToLink, { [libraryName]: ethJSUtil.addHexPrefix(address) })
   },
 
+  // @rv: this is only used for decode response from evm solidity response.
   decodeResponse: function (response, fnabi) {
     // Only decode if there supposed to be fields
     if (fnabi.outputs && fnabi.outputs.length > 0) {

@@ -18,7 +18,7 @@ contract Ballot {
     Proposal[] proposals;
 
     /// Create a new ballot with $(_numProposals) different proposals.
-    function Ballot(uint8 _numProposals) public {
+    constructor(uint8 _numProposals) public {
         chairperson = msg.sender;
         voters[chairperson].weight = 1;
         proposals.length = _numProposals;
@@ -57,7 +57,7 @@ contract Ballot {
     }
 
     function winningProposal() public constant returns (uint8 _winningProposal) {
-        uint256 winningVoteCount = 0;
+        uint winningVoteCount = 0;
         for (uint8 prop = 0; prop < proposals.length; prop++)
             if (proposals[prop].voteCount > winningVoteCount) {
                 winningVoteCount = proposals[prop].voteCount;
@@ -67,13 +67,13 @@ contract Ballot {
 }`
 
 var ballotTest = `pragma solidity ^0.4.7;
-import "remix_tests.sol"; // this import is automatically injected by Remix.
+import "./assert.sol";
 import "./ballot.sol";
 
 contract test3 {
    
     Ballot ballotToTest;
-    function beforeAll () {
+    function beforeAll() public {
        ballotToTest = new Ballot(2);
     }
     
@@ -88,7 +88,92 @@ contract test3 {
 }
 `
 
+// @rv: fix the bug for IELE
+const assert = `pragma solidity ^0.4.7;
+library Assert {
+  event AssertionEvent(
+    bool passed,
+    string message
+  );
+  function ok(bool a, string message) public returns (bool result) {
+    result = a;
+    emit AssertionEvent(result, message);
+  }
+  function equal(uint a, uint b, string message) public returns (bool result) {
+    result = (a == b);
+    emit AssertionEvent(result, message);
+  }
+  function equal(int a, int b, string message) public returns (bool result) {
+    result = (a == b);
+    emit AssertionEvent(result, message);
+  }
+  function equal(bool a, bool b, string message) public returns (bool result) {
+    result = (a == b);
+    emit AssertionEvent(result, message);
+  }
+  // TODO: only for certain versions of solc
+  //function equal(fixed a, fixed b, string message) public returns (bool result) {
+  //  result = (a == b);
+  //  AssertionEvent(result, message);
+  //}
+  // TODO: only for certain versions of solc
+  //function equal(ufixed a, ufixed b, string message) public returns (bool result) {
+  //  result = (a == b);
+  //  AssertionEvent(result, message);
+  //}
+  function equal(address a, address b, string message) public returns (bool result) {
+    result = (a == b);
+    emit AssertionEvent(result, message);
+  }
+  function equal(bytes32 a, bytes32 b, string message) public returns (bool result) {
+    result = (a == b);
+    emit AssertionEvent(result, message);
+  }
+  // TODO: needs to be convert to bytes first to be comparable
+  //function equal(string a, string b, string message) public returns (bool result) {
+  //  result = (a == b);
+  //  AssertionEvent(result, message);
+  //}
+  function notEqual(uint a, uint b, string message) public returns (bool result) {
+    result = (a != b);
+    emit AssertionEvent(result, message);
+  }
+  function notEqual(int a, int b, string message) public returns (bool result) {
+    result = (a != b);
+    emit AssertionEvent(result, message);
+  }
+  function notEqual(bool a, bool b, string message) public returns (bool result) {
+    result = (a != b);
+    emit AssertionEvent(result, message);
+  }
+  // TODO: only for certain versions of solc
+  //function notEqual(fixed a, fixed b, string message) public returns (bool result) {
+  //  result = (a != b);
+  //  AssertionEvent(result, message);
+  //}
+  // TODO: only for certain versions of solc
+  //function notEqual(ufixed a, ufixed b, string message) public returns (bool result) {
+  //  result = (a != b);
+  //  AssertionEvent(result, message);
+  //}
+  function notEqual(address a, address b, string message) public returns (bool result) {
+    result = (a != b);
+    emit AssertionEvent(result, message);
+  }
+  function notEqual(bytes32 a, bytes32 b, string message) public returns (bool result) {
+    result = (a != b);
+    emit AssertionEvent(result, message);
+  }
+  // TODO: needs to be convert to bytes first to be comparable
+  //function notEqual(string a, string b, string message) public returns (bool result) {
+  //  result = (a != b);
+  //  AssertionEvent(result, message);
+  //}
+}
+`
+
 module.exports = {
   ballot: { name: 'ballot.sol', content: ballot },
-  ballot_test: { name: 'ballot_test.sol', content: ballotTest }
+  ballot_test: { name: 'ballot_test.sol', content: ballotTest },
+  assert: {name: 'assert.sol', content: assert }
 }
