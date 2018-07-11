@@ -363,6 +363,9 @@ UniversalDApp.prototype.runTx = function (args, cb) {
     },
     // @rv: unlock account if necessary
     function unlockAccount (address, value, gasLimit, next) {
+      if (!address) {
+        return next('No accounts available')
+      }
       function _getPrivateKey(keystore, password) {
         keythereum.recover(password, keystore, (privateKey)=> {
           privateKey = privateKey.toString('hex').replace(/^00/, '') // Hack: empty password bug.

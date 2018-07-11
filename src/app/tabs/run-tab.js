@@ -573,7 +573,7 @@ function settings (container, appAPI, appEvents, opts) {
       <div class="${css.crow}">
         <div class="${css.rvButton}" style="margin-left:0;background-color:hsla(45, 100%, 75%, 0.5);" onclick=${importAccount}>Import account</div>
         <div class="${css.rvButton}" style="background-color:hsla(45, 100%, 75%, 0.5);" onclick=${newAccount}>Create account</div>
-        <div class="${css.rvButton}" style="background-color:hsla(45, 100%, 75%, 0.5);" onclick=${requestFromFaucet} id="request-from-faucet-btn">Request from Faucet</div>
+        <div class="${css.rvButton}" style="background-color:hsla(45, 100%, 75%, 0.5);" onclick=${requestFromFaucet} id="request-from-faucet-btn">Request funds</div>
       </div>
     </div>
   `
@@ -651,7 +651,7 @@ function settings (container, appAPI, appEvents, opts) {
       targetUrl = `https://kevm-testnet.iohkdev.io:8099/faucet?address=${address}`
       txLink = `https://kevm-testnet.iohkdev.io/transaction/`
     } else if (context === 'custom-rpc-iele-testnet-dev') {
-      targetUrl = `https://staging.iele-private.mantis.iohkdev.io:8099/faucet?address=${address}` 
+      targetUrl = `https://staging.iele.dev-mantis.iohkdev.io:8099/faucet?address=${address}`
       txLink = `https://staging.iele-private.mantis.iohkdev.io/transaction/`
     } else {
       return addTooltip('No faucet found for ' + context)
@@ -790,6 +790,7 @@ function settings (container, appAPI, appEvents, opts) {
       for (let i = 0; i < customRPCList.length; i++) {
         if (customRPCList[i].context === customRPC.context) {
           find = true
+          customRPCList[i] = customRPC // Force overwrite.
           break
         }
       }
@@ -810,7 +811,7 @@ function settings (container, appAPI, appEvents, opts) {
       name: 'IELE Testnet (staging)',
       context: 'custom-rpc-iele-testnet-dev',
       chainId: undefined,
-      rpcUrl: 'https://staging-iele.kevm-private.mantis.iohkdev.io:8546/',
+      rpcUrl: 'https://staging.iele.dev-mantis.iohkdev.io:8546/',
       vm: 'ielevm'
     })
 

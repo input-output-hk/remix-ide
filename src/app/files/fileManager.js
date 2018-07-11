@@ -128,6 +128,11 @@ class FileManager {
       browserProvider.resolveDirectory('browser', (error, filesTree) => {
         if (error) console.error(error)
         var fileList = Object.keys(filesTree)
+        // @rv: skip `assert.sol`
+        if (fileList.length === 3 && fileList[0] === 'assert.sol') {
+          fileList = fileList.slice(1)
+        }
+
         if (fileList.length) {
           _switchFile(browserProvider.type + '/' + fileList[0])
         } else {
