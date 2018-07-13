@@ -547,11 +547,8 @@ UniversalDApp.prototype.sendCustomTransaction = function(address, cb) {
       return cb(`Invalid recipient address: ${to}`)
     }
 
-    value = parseFloat(value || '0')
     if (isNaN(value)) {
       return cb(`Invalid amount: ${value}`)
-    } else { // convert from ether to wei
-      value = value * 1000000000000000000
     }
 
     dataHex = dataHex.trim()

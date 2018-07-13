@@ -213,16 +213,32 @@ module.exports = {
       <p>From: ${from}</p>
       <input id="custom-transaction-recipient-address-input" type="text" name='prompt_text' class="${css['prompt_text']}" placeholder="Recipient Address" >
       <br><br>
-      <input id="custom-transaction-amount-input" type="text" name='prompt_text' class="${css['prompt_text']}" placeholder="Amount (ether)" >
-      <br><br>
+      <div>
+        <input id="custom-transaction-amount-input" type="text" name='prompt_text' class="${css['prompt_text']}" placeholder="0" value="0">
+        <select id="custom-transaction-unit-select">
+          <option value="wei">wei</option>
+          <option value="gwei">gwei</option>
+          <option value="finney">finney</option>
+          <option value="ether">ether</option>
+        </select>
+      </div>
+      <br>
       <input id="custom-transaction-data-input" type="text" name='prompt_text' class="${css['prompt_text']}" placeholder="Transaction Data 0x01234 (optional)" >
     </div>`
     modal('Send Transaction', customTransactionPanel, {
       'label': 'Next',
       fn: ()=> {
         const to = customTransactionPanel.querySelector('#custom-transaction-recipient-address-input').value
-        const value = customTransactionPanel.querySelector('#custom-transaction-amount-input').value
+        let value = parseFloat(customTransactionPanel.querySelector('#custom-transaction-amount-input').value.trim() || '0')
+        const unit = customTransactionPanel.querySelector('#custom-transaction-unit-select').value
         const dataHex = customTransactionPanel.querySelector('#custom-transaction-data-input').value
+        if (unit === 'ether') {
+          value = value * 1000000000000000000
+        } else if (unit === 'finney') {
+          value = value * 1000000000000000
+        } else if (unit === 'gwei') {
+          value = value * 1000000000
+        } // else wei
         return cb(null, {
           to, 
           value,
