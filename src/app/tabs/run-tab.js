@@ -652,7 +652,7 @@ function settings (container, appAPI, appEvents, opts) {
       txLink = `https://kevm-testnet.iohkdev.io/transaction/`
     } else if (context === 'custom-rpc-iele-testnet-dev') {
       targetUrl = `https://staging.iele.dev-mantis.iohkdev.io:8099/faucet?address=${address}`
-      txLink = `https://staging.iele-private.mantis.iohkdev.io/transaction/`
+      txLink = `https://staging.iele.dev-mantis.iohkdev.io/transaction/`
     } else {
       return addTooltip('No faucet found for ' + context)
     }
