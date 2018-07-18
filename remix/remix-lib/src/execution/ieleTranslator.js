@@ -85,7 +85,7 @@ function encode(value, type) {
         encoded = '0' + encoded
       }
       let littleEndianStr = ''
-      if (otype.match(/^u?int(\d*)$/)) {
+      if (otype.match(/^u?int$/)) {
         const bytesSize = encoded.length / 2
         littleEndianStr = bytesSize.toString(16)
         while (littleEndianStr.length !== 16) {
@@ -105,18 +105,28 @@ function encode(value, type) {
       throw (`IeleTranslator error: Invalid value ${value} with type ${JSON.stringify(type)}.` )
     }
   } else if (t === 'address') {
-    return (value.startsWith('0x') ? '' : '0x') + value
+    let encoded = value.replace(/^0x/, '')
+    if (parseInt(encoded[0], 16) >= 8) { // negative number
+      encoded = '00' + encoded
+    }
+    return '0x' + encoded
   } else if (t.match(/^uint/)) {
     const num = parseInt(value)
     if (num < 0) {
       throw (`IeleTranslator error: Invalid value ${value} with type ${JSON.stringify(type)}.` )
     }
     let encoded = num.toString(16)
+    if (t.match(/^uint$/) && parseInt(encoded[0], 16) >= 8) { // negative number
+      encoded = '00' + encoded
+    } else if (t.match(/^uint(\d+)$/)) {
+      const bits = parseInt(t.match(/^uint(\d+)$/)[1], 10)
+      encoded = encoded.slice(encoded.length - bits / 4, encoded.length)
+      while (encoded.length !== bits / 4) {
+        encoded = '0' + encoded
+      }
+    }
     if (encoded.length % 2 !== 0) {
       encoded = '0' + encoded
-    }
-    if (parseInt('0x' + encoded.slice(0, 1), 16) >= 8) { // negative number
-      encoded = '00' + encoded
     }
     return '0x' + encoded
   } else if (t.match(/^int/)) {
@@ -132,8 +142,25 @@ function encode(value, type) {
     } else {
       encoded = num.toString(16)
     }
+    if (t.match(/^int$/) && parseInt(encoded[0], 16) >= 8 && num > 0) { // negative number
+      encoded = '00' + encoded
+    } else if (t.match(/^int(\d+)$/)) {
+      const bits = parseInt(t.match(/^int(\d+)$/)[1], 10)
+      encoded = encoded.slice(encoded.length - bits / 4, encoded.length)
+      while (encoded.length !== bits / 4) {
+        if (num < 0) {
+          encoded = 'f' + encoded
+        } else {
+          encoded = '0' + encoded
+        }
+      }
+    }
     if (encoded.length % 2 !== 0) {
-      encoded = '0' + encoded
+      if (num < 0) {
+        encoded = 'f' + encoded
+      } else {
+        encoded = '0' + encoded
+      }
     }
     return '0x' + encoded
   } else if (t.match(/^(byte|bytes\d+)$/)) { // Fixed-size byte array
@@ -144,6 +171,9 @@ function encode(value, type) {
     }
     while (encoded.length < bytesSize * 2) {
       encoded = '0' + encoded
+    }
+    if (parseInt(encoded[0], 16) >= 8) { // negative number
+      encoded = '00' + encoded
     }
     return '0x' + encoded
   } else if (t.match(/^(string|bytes)$/)) {
@@ -198,33 +228,25 @@ function decode(value, type) {
       arraySize = parseInt(value.slice(value.length - 2 - arraySizeBytes * 2, value.length - 2), 16)
       value = value.slice(0, value.length - 2 - arraySizeBytes * 2)
     }
-    if (otype.match(/^u?int(\d*)$/)) {
-      const resultArr = []
-      let rest = value
-      for (let i = 0; i < arraySize; i++) {
+    const resultArr = []
+    let rest = value
+    for (let i = 0; i < arraySize; i++) {
+      if (otype.match(/^u?int$/)) {
         const j = rest.length - 16
         const bytesSize = parseInt(rest.slice(j, rest.length), 16)
         const v = rest.slice(j - bytesSize * 2, j)
         const t = decode(v, {type: otype})
         rest = rest.slice(0, j - bytesSize * 2)
         resultArr.push(t.result)
-      }
-      return {
-        rest, 
-        result: resultArr,
-      }
-    } else {
-      const resultArr = []
-      let rest = value 
-      for (let i = 0; i < arraySize; i++) {
+      } else {
         const t = decode(rest, {type: otype, components: type.components})
         rest = t.rest
         resultArr.push(t.result)
       }
-      return {
-        rest, 
-        result: resultArr,
-      }
+    }
+    return {
+      rest, 
+      result: resultArr,
     }
   } else if (t === 'bool') {
     const result = (!!parseInt(value.slice(value.length - 2, value.length)))
@@ -238,23 +260,45 @@ function decode(value, type) {
     while (result.length !== 40) {
       result = '0' + result
     }
-    result = '0x' + result
     const rest = value.slice(0, value.length - 40)
+    result = '0x' + result
     return {
       result,
       rest
     }
   } else if (t.match(/^uint/)) {
-    const result = parseInt(value, 16)
-    return {
-      result,
-      rest: ''
+    let m
+    if ((m = t.match(/^uint(\d+)$/))) {
+      const bits = parseInt(m[1])
+      const rest = value.slice(0, value.length - bits / 4)
+      const result = parseInt(value.slice(value.length - bits / 4, value.length), 16)
+      return {
+        result,
+        rest
+      }
+    } else {
+      const result = parseInt(value, 16)
+      return {
+        result,
+        rest: ''
+      }
     }
   } else if (t.match(/^int/)) {
-    const result = hexToInt(value)
-    return {
-      result,
-      rest: ''
+    let m
+    if ((m = t.match(/^int(\d+)$/))) {
+      const bits = parseInt(m[1])
+      const rest = value.slice(0, value.length - bits / 4)
+      const result = hexToInt(value.slice(value.length - bits / 4, value.length))
+      return {
+        result,
+        rest
+      }
+    } else {
+      const result = hexToInt(value)
+      return {
+        result,
+        rest: ''
+      }
     }
   } else if (t.match(/^(byte|bytes\d+)$/)) { // Fixed-size byte array
     const bytesSize = (t === 'byte') ? 1 : parseInt(t.match(/^bytes(\d+)$/)[1], 10)
@@ -262,8 +306,8 @@ function decode(value, type) {
     while (result.length !== bytesSize * 2) {
       result = '0' + result
     }
-    result = '0x' + result
     const rest = value.slice(0, value.length - bytesSize * 2)
+    result = '0x' + result
     return {
       result,
       rest
