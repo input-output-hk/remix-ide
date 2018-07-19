@@ -650,7 +650,7 @@ function settings (container, appAPI, appEvents, opts) {
     if (context === 'custom-rpc-kevm-testnet') {
       targetUrl = `https://kevm-testnet.iohkdev.io:8099/faucet?address=${address}`
       txLink = `https://kevm-testnet.iohkdev.io/transaction/`
-    } else if (context === 'custom-rpc-iele-testnet-dev') {
+    } else if (context === 'custom-rpc-iele-testnet') {
       targetUrl = `https://staging.iele.dev-mantis.iohkdev.io:8099/faucet?address=${address}`
       txLink = `https://staging.iele.dev-mantis.iohkdev.io/transaction/`
     } else {
@@ -808,14 +808,15 @@ function settings (container, appAPI, appEvents, opts) {
     })
 
     addIfNotExists({
-      name: 'IELE Testnet (staging)',
-      context: 'custom-rpc-iele-testnet-dev',
+      name: 'IELE Testnet',
+      context: 'custom-rpc-iele-testnet',
       chainId: undefined,
       rpcUrl: 'https://staging.iele.dev-mantis.iohkdev.io:8546/',
       vm: 'ielevm'
     })
 
-    opts.config.set('custom-rpc-list', customRPCList)
+    // TODO: remove the `filter` below in the future when IELE testnet launches
+    opts.config.set('custom-rpc-list', customRPCList.filter((x)=> x.context !== 'custom-rpc-iele-testnet-dev'))
   }
 
   return el
@@ -829,7 +830,7 @@ function toggleRVElements() {
 
     const context = executionContext.getProvider()
     if (context === 'custom-rpc-kevm-testnet' || 
-        context === 'custom-rpc-iele-testnet-dev') {
+        context === 'custom-rpc-iele-testnet') {
       $('#request-from-faucet-btn').show()
     } else {
       $('#request-from-faucet-btn').hide()

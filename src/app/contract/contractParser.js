@@ -40,6 +40,8 @@ var getDetails = function (contractName, contract, source) {
     for (var fun in contract.evm.methodIdentifiers) {
       detail.functionHashes[contract.evm.methodIdentifiers[fun]] = fun
     }
+  } else {
+    delete detail['functionHashes']
   }
 
   if (contract.evm) {

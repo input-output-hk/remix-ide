@@ -300,13 +300,17 @@ function renderEmptyBlock (self, data) {
 }
 
 function checkTxStatus (tx, type) {
-  if (tx.status === '0x1') {
+  if (tx.status === '0x1' ||
+      tx.status === '0x00' // IOHK network 0x00 means success
+  ) {
     return yo`<i class="${css.txStatus} ${css.succeeded} fa fa-check-circle"></i>`
   }
-  if (type === 'call') {
+  if (type === 'call' ||
+      tx.isCall // @rv: <= we add this condition
+  ) {
     return yo`<i class="${css.txStatus} ${css.call}">call</i>`
-  } else if (type === 'knownTx') { // @rv, support type `knownTx`
-    return yo`<i class="${css.txStatus} ${css.knownTx}">tx</i>`
+  // } else if (type === 'knownTx') { // @rv, support type `knownTx`
+  //  return yo`<i class="${css.txStatus} ${css.knownTx}">tx</i>`
   } else {
     return yo`<i class="${css.txStatus} ${css.failed} fa fa-times-circle"></i>`
   }

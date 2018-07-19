@@ -59,7 +59,7 @@
     "http-server": "0.9.0",
     "keythereum": "^1.0.4",
     "remixd": "git+https://github.com/ethereum/remixd.git",
-    "rlp": "^2.0.0"
+    "rlp": "^2.1.0"
   },
   "repository": {
     "type": "git",

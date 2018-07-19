@@ -115,153 +115,172 @@ function Compiler (handleImportCall) {
   }
 
   async function compileSolidityToIELE(result, source, cb) {
-    // console.log('@compileSolidityToIELE', result, source)
-    const apiGateway = 'https://5c177bzo9e.execute-api.us-east-1.amazonaws.com/prod'
-    const params = [source.target, {}]
     const sources = source.sources
-    for (const filePath in sources) {
-      params[1][filePath] = sources[filePath].content
-    }
-    try {
-      // get IELE assembly
-      const response1 = await window['fetch'](apiGateway, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-          method: 'sol2iele_asm',
-          params: params,
-          jsonrpc: '2.0'
-        })
-      })
-      const json1 = await response1.json()
-      if (json1['error']) {
-        throw json1['error']['data'].toString()
+
+    async function helper(sources, target) {
+      // console.log('@compileSolidityToIELE', result, source)
+      const apiGateway = 'https://5c177bzo9e.execute-api.us-east-1.amazonaws.com/prod'
+      const params = [target, {}]
+      for (const filePath in sources) {
+        params[1][filePath] = sources[filePath].content
       }
-      // console.log('- json1: ', json1)
-
-      let code = json1['result']
-      const index = code.indexOf('\n=====')         // TODO: multiple .sol files will produce multiple ====
-      code = code.slice(index, code.length)
-      code = code.replace(/^IELE\s+assembly\s*\:\s*$/mgi, '')
-      const ieleCode = code.replace(/^=====/mg, '// =====').trim()
-      const solidityErrors = formatSolidityErrors(json1['result'])
-
-      // console.log('- ieleCode: |' + ieleCode + '|')
-      if (!ieleCode) { // error. eg ballot.sol
+      try {
+        // get IELE assembly
+        const response1 = await window['fetch'](apiGateway, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({
+            method: 'sol2iele_asm',
+            params: params,
+            jsonrpc: '2.0'
+          })
+        })
+        const json1 = await response1.json()
+        if (json1['error']) {
+          throw json1['error']['data'].toString()
+        }
+        // console.log('- json1: ', json1)
+  
+        let code = json1['result']
+        const index = code.indexOf('\n=====')         // TODO: multiple .sol files will produce multiple ====
+        code = code.slice(index, code.length)
+        code = code.replace(/^IELE\s+assembly\s*\:\s*$/mgi, '')
+        const ieleCode = code.replace(/^=====/mg, '// =====').trim()
+        const solidityErrors = formatSolidityErrors(json1['result'])
+  
+        // console.log('- ieleCode: |' + ieleCode + '|')
+        if (!ieleCode) { // error. eg ballot.sol
+          if (solidityErrors.length) {
+            throw {
+              errors: solidityErrors
+            }
+          } else {
+            throw json1['result']
+          }
+        }
+        const newTarget = target.replace(/\.sol$/, '.iele')
+        const contractNamesMatch = ieleCode.match(/\s*contract\s+(.+?){\s*/ig) // the last contract is the main contract (from Dwight)
+        let contractName = ""
+        if (contractNamesMatch) {
+          contractName = contractNamesMatch[contractNamesMatch.length - 1].trim().split(/\s+/)[1]
+        }
+        const targetContractName = contractName.slice(contractName.lastIndexOf(':')+1, contractName.length).replace(/"$/, '')
+  
+        // Get IELE Binary code
+        const response2 = await window['fetch'](apiGateway, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            method: 'iele_asm',
+            params: [newTarget, {[newTarget]: ieleCode}],
+            jsonrpc: '2.0'
+          })
+        })
+        const json2 = await response2.json()
+        // console.log('- json2: ', json2)
+        if (json2['error']) {
+          throw json2['error']['data'].toString()
+        }
+        const r = json2['result'] // TODO: check r error.
+        const bytecode = isNaN('0x' + r) ? '' : r
+        const ieleAbi = retrieveIELEAbi(ieleCode, contractName)
+        // console.log('- contractName: ', contractName)
+        // console.log('- targetContractName: ', targetContractName)
+  
+        const contracts = result.contracts[target] || {}
+        for (const name in contracts) {
+          if (name !== targetContractName) {
+            delete(contracts[name])
+          }
+        }
+        const contract = contracts[targetContractName]
+        if (!contract) { // this means here is some error.
+          return
+        }
+        contracts[targetContractName]['metadata'] = {
+          vm: 'iele vm',
+        }
+        contracts[targetContractName]['ielevm'] = {
+          bytecode: {
+            object: bytecode
+          },
+          gasEstimate: {
+            codeDepositCost: '0',
+            executionCost: '0',
+            totalCost: '0'
+          },
+          abi: ieleAbi,
+          ieleAssembly: ieleCode
+        }
+        contracts[targetContractName]['vm'] = 'ielevm'
+        contracts[targetContractName]['sourceLanguage'] = 'solidity'
+        delete(contracts[targetContractName]['evm'])
         if (solidityErrors.length) {
+          result['errors'] = solidityErrors
+        }
+  
+        // Get Solidity ABI 
+        const response3 = await window['fetch'](apiGateway, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            method: 'sol2iele_abi',
+            params: params,
+            jsonrpc: '2.0'
+          })
+        })
+        const json3 = await response3.json()
+        if (json3['error']) {
+          throw json3['error']['data'].toString()
+        }
+        const r3 = json3['result']
+        const lines = r3.split('\n')
+        let abi = {}
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].match(new RegExp(`^=+\\s+\/?${target}:${targetContractName}\\s+=+`))) {
+            abi = JSON.parse(lines[i + 2])
+            break
+          }
+        }
+        contracts[targetContractName]['abi'] = abi // override old abi
+        return 
+      } catch(error) {
+        throw error
+      }
+    }
+
+    const asyncFunctions = [];
+    for (const target in sources) {
+      try {
+        await helper(sources, target)
+      } catch(error) {
+        if (typeof(error) === 'string' ||
+            (error.stack && error.message && typeof(error.stack) === 'string' && typeof(error.message) === 'string') // Exception
+        ) {
+          const message = error.toString()
           return cb({
-            errors: solidityErrors
+            error: {
+              component: 'general',
+              formattedMessage: message,
+              severity: 'error',
+              message
+            }
           })
         } else {
-          throw json1['result']
+          return cb(error)
         }
       }
-      const newTarget = source.target.replace(/\.sol$/, '.iele')
-      const contractNamesMatch = ieleCode.match(/\s*contract\s+(.+?){\s*/ig) // the last contract is the main contract (from Dwight)
-      let contractName = ""
-      if (contractNamesMatch) {
-        contractName = contractNamesMatch[contractNamesMatch.length - 1].trim().split(/\s+/)[1]
-      }
-      const targetContractName = contractName.slice(contractName.lastIndexOf(':')+1, contractName.length).replace(/"$/, '')
-
-      // Get IELE Binary code
-      const response2 = await window['fetch'](apiGateway, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-          'content-type': 'application/json'
-        },
-        body: JSON.stringify({
-          method: 'iele_asm',
-          params: [newTarget, {[newTarget]: ieleCode}],
-          jsonrpc: '2.0'
-        })
-      })
-      const json2 = await response2.json()
-      // console.log('- json2: ', json2)
-      if (json2['error']) {
-        throw json2['error']['data'].toString()
-      }
-      const r = json2['result'] // TODO: check r error.
-      const bytecode = isNaN('0x' + r) ? '' : r
-      const ieleAbi = retrieveIELEAbi(ieleCode, contractName)
-      // console.log('- contractName: ', contractName)
-      // console.log('- targetContractName: ', targetContractName)
-      const contracts = result.contracts[source.target] || {}
-      for (const name in contracts) {
-        if (name !== targetContractName) {
-          delete(contracts[name])
-        }
-      }
-      const contract = contracts[targetContractName]
-      if (!contract) { // this means here is some error.
-        return cb(result)
-      }
-      contracts[targetContractName]['metadata'] = {
-        vm: 'iele vm',
-      }
-      contracts[targetContractName]['ielevm'] = {
-        bytecode: {
-          object: bytecode
-        },
-        gasEstimate: {
-          codeDepositCost: '0',
-          executionCost: '0',
-          totalCost: '0'
-        },
-        abi: ieleAbi,
-        ieleAssembly: ieleCode
-      }
-      contracts[targetContractName]['vm'] = 'ielevm'
-      contracts[targetContractName]['sourceLanguage'] = 'solidity'
-      delete(contracts[targetContractName]['evm'])
-      if (solidityErrors.length) {
-        result['errors'] = solidityErrors
-      }
-
-      // Get Solidity ABI 
-      const response3 = await window['fetch'](apiGateway, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-          'content-type': 'application/json'
-        },
-        body: JSON.stringify({
-          method: 'sol2iele_abi',
-          params: params,
-          jsonrpc: '2.0'
-        })
-      })
-      const json3 = await response3.json()
-      if (json3['error']) {
-        throw json3['error']['data'].toString()
-      }
-      const r3 = json3['result']
-      const lines = r3.split('\n')
-      let abi = {}
-      for (let i = 0; i < lines.length; i++) {
-        if (lines[i].indexOf('======= ' + source.target + ':' + targetContractName + ' =======') >= 0) {
-          abi = JSON.parse(lines[i + 2])
-          break
-        }
-      }
-      contracts[targetContractName]['abi'] = abi // override old abi
-      return cb(result)   
-    } catch(error) {
-      // console.log('@compileSolidityToIELE catch error: ', error)
-      const message = error.toString()
-      return cb({ 
-        error: {
-          component: 'general',
-          formattedMessage: message,
-          severity: 'error',
-          message
-        }
-      })
     }
+    return cb(result)
   }
 
   function formatIeleErrors(message, target) {

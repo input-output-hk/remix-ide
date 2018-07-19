@@ -57,7 +57,7 @@ UniversalDApp.prototype.reset = function (contracts, transactionContextAPI) {
   this.txRunner.event.register('transactionBroadcasted', (txhash) => {
     this._api.detectNetwork((error, network) => {
       if (!error && network) {
-        var txLink = executionContext.txDetailsLink(network.name, txhash)
+        var txLink = executionContext.txDetailsLink(network.name, network.id, txhash)
         if (txLink) this._api.logHtmlMessage(yo`<a href="${txLink}" target="_blank">${txLink}</a>`)
       }
     })

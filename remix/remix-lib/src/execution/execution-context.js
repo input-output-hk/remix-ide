@@ -150,7 +150,7 @@ function ExecutionContext () {
         else if (id === '3') name = 'Ropsten'
         else if (id === '4') name = 'Rinkeby'
         else if (id === '42') name = 'Kovan'
-        else if (id === '13137357') name = 'Goguen' // @rv: add Goguen
+        else if (id === '13137357' || id === '1234') name = 'Goguen' // @rv: add Goguen
         else name = 'Custom'
 
         if (id === '1') {
@@ -272,9 +272,11 @@ function ExecutionContext () {
   }
   this.setProviderFromEndpoint = setProviderFromEndpoint
 
-  this.txDetailsLink = function (network, hash) {
+  this.txDetailsLink = function (network, id, hash) {
     if (transactionDetailsLinks[network]) {
       return transactionDetailsLinks[network] + hash
+    } else if (transactionDetailsLinksRV[id]) {
+      return transactionDetailsLinksRV[id] + hash
     }
   }
 }
@@ -284,7 +286,11 @@ var transactionDetailsLinks = {
   'Rinkeby': 'https://rinkeby.etherscan.io/tx/',
   'Ropsten': 'https://ropsten.etherscan.io/tx/',
   'Kovan': 'https://kovan.etherscan.io/tx/',
-  'Goguen': 'https://kevm-testnet.iohkdev.io/transaction/' // @rv: add url for testnet
+}
+
+var transactionDetailsLinksRV = {
+  '13137357': 'https://kevm-testnet.iohkdev.io/transaction/',
+  '1234': 'https://staging.iele.dev-mantis.iohkdev.io/transaction/'
 }
 
 module.exports = new ExecutionContext()

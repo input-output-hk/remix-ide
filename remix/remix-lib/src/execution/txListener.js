@@ -494,25 +494,22 @@ class TxListener {
       // console.log('- contract: ', contract)
       const isIeleVM = contract.object.vm === 'ielevm'
       // console.log('- isIeleVM: ', isIeleVM)
-      let bytes 
+      let bytes, resolvedCode 
       if (isIeleVM) {
         bytes = contract.object.ielevm.bytecode.object.toLowerCase()
-        codeToResolve = codeToResolve.toLowerCase()
+        resolvedCode = codeToResolve.toLowerCase()
         if (isCreation) { // constructor
-          codeToResolve = '0x' + RLP.decode(codeToResolve)[0].toString('hex')
+          resolvedCode = '0x' + RLP.decode(resolvedCode)[0].toString('hex')
         }
-        // console.log('- codeToResolve: ', codeToResolve)
-        // console.log('- bytes: ', bytes)
       } else {
         bytes = isCreation ? contract.object.evm.bytecode.object : contract.object.evm.deployedBytecode.object
+        resolvedCode = codeToResolve
       }
-      if (codeUtil.compareByteCode(codeToResolve, '0x' + bytes)) {
+      if (codeUtil.compareByteCode(resolvedCode, '0x' + bytes)) {
         found = contract.name
-        // console.log('* found: ', found)
         return true
       }
     })
-    // console.log('* found: ', found)
     return found
   }
 

@@ -4,13 +4,13 @@ var ballot = `pragma solidity ^0.4.0;
 contract Ballot {
 
     struct Voter {
-        uint weight;
+        uint256 weight;
         bool voted;
         uint8 vote;
         address delegate;
     }
     struct Proposal {
-        uint voteCount;
+        uint256 voteCount;
     }
 
     address chairperson;
@@ -57,7 +57,7 @@ contract Ballot {
     }
 
     function winningProposal() public constant returns (uint8 _winningProposal) {
-        uint winningVoteCount = 0;
+        uint256 winningVoteCount = 0;
         for (uint8 prop = 0; prop < proposals.length; prop++)
             if (proposals[prop].voteCount > winningVoteCount) {
                 winningVoteCount = proposals[prop].voteCount;
@@ -79,7 +79,7 @@ contract test3 {
     
     function checkWinningProposal () public {
         ballotToTest.vote(1);
-        Assert.equal(ballotToTest.winningProposal(), uint(1), "1 should be the winning proposal");
+        Assert.equal(ballotToTest.winningProposal(), uint256(1), "1 should be the winning proposal");
     }
     
     function checkWinninProposalWithReturnValue () public constant returns (bool) {
@@ -99,11 +99,11 @@ library Assert {
     result = a;
     emit AssertionEvent(result, message);
   }
-  function equal(uint a, uint b, string message) public returns (bool result) {
+  function equal(uint256 a, uint256 b, string message) public returns (bool result) {
     result = (a == b);
     emit AssertionEvent(result, message);
   }
-  function equal(int a, int b, string message) public returns (bool result) {
+  function equal(int256 a, int256 b, string message) public returns (bool result) {
     result = (a == b);
     emit AssertionEvent(result, message);
   }
@@ -134,11 +134,11 @@ library Assert {
   //  result = (a == b);
   //  AssertionEvent(result, message);
   //}
-  function notEqual(uint a, uint b, string message) public returns (bool result) {
+  function notEqual(uint256 a, uint256 b, string message) public returns (bool result) {
     result = (a != b);
     emit AssertionEvent(result, message);
   }
-  function notEqual(int a, int b, string message) public returns (bool result) {
+  function notEqual(int256 a, int256 b, string message) public returns (bool result) {
     result = (a != b);
     emit AssertionEvent(result, message);
   }
