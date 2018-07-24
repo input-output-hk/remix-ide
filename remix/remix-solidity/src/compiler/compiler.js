@@ -79,6 +79,8 @@ function Compiler (handleImportCall) {
 
   /**
    * @rv: parse solidity error messages
+   * Reference:
+   * https://solidity.readthedocs.io/en/latest/using-the-compiler.html?highlight=error-types#error-types
    */
   function formatSolidityErrors(message) {
     message = message.trim().replace('Warning: This is a pre-release compiler version, please do not use it in production.', '')
@@ -104,7 +106,14 @@ function Compiler (handleImportCall) {
       messages.push(t.join('\n').trim())
     }
     return messages.map((message)=> {
-      const isWarning = message.match(/^([^:]*):([0-9]*):(([0-9]*):)?\s+Warning\:\s+/)
+      const errorMatch = message.match(/^[^:]*:[0-9]*:(?:[0-9]*:)?\s+([^:]+)\:\s+/)
+      let isWarning = true
+      if (errorMatch && errorMatch[1]) {
+        const errorType = errorMatch[1]
+        if (errorType.match(/error|exception/i)) {
+          isWarning = false
+        }
+      }
       return {
         component: 'general',
         formattedMessage: message,
@@ -116,10 +125,12 @@ function Compiler (handleImportCall) {
 
   async function compileSolidityToIELE(result, source, cb) {
     const sources = source.sources
+    delete result["errors"]
+    delete result["error"]
 
     async function helper(sources, target) {
       // console.log('@compileSolidityToIELE', result, source)
-      const apiGateway = 'https://5c177bzo9e.execute-api.us-east-1.amazonaws.com/prod'
+      const apiGateway = 'https://staging.iele.dev-mantis.iohkdev.io/remix/api'
       const params = [target, {}]
       for (const filePath in sources) {
         params[1][filePath] = sources[filePath].content
