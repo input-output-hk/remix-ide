@@ -69,7 +69,7 @@ module.exports = class TabbedMenu {
 
 const css = csjs`
   li.active {
-    background-color: ${styles.rightPanel.backgroundColor_Tab};
+    background-color: ${styles.rightPanel.backgroundColor_Active_Tab};
     color: ${styles.appProperties.mainText_Color}
   }
   .options {

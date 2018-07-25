@@ -30,9 +30,9 @@ module.exports = class SupportTab {
       <div class="${css.supportTabView}" id="supportView">
         <div class="${css.infoBox}">
           Have a question, found a bug or want to propose a feature? Have a look at the
-          <a target="_blank" href='https://github.com/ethereum/browser-solidity/issues'> issues</a> or check out
-          <a target="_blank" href='https://remix.readthedocs.io/en/latest/'> the documentation page on Remix</a> or
-          <a target="_blank" href='https://solidity.readthedocs.io/en/latest/'> Solidity</a>.
+          <a class="${css.linkStyle}" target="_blank" href='https://github.com/ethereum/browser-solidity/issues'> issues</a> or check out
+          <a class="${css.linkStyle}" target="_blank" href='https://remix.readthedocs.io/en/latest/'> the documentation page on Remix</a> or
+          <a class="${css.linkStyle}" target="_blank" href='https://solidity.readthedocs.io/en/latest/'> Solidity</a>.
         </div>
         <div class="${css.chat}">
           <div class="${css.chatTitle}" onclick=${openLink} title='Click to open chat in Gitter'>
@@ -92,6 +92,9 @@ const css = csjs`
     transform: scale(0.9);
     padding: 0;
     border: none;
+  }
+  .linkStyle {
+    color: ${styles.appProperties.specialText_Color}
   }
   .infoBox {
     ${styles.rightPanel.supportTab.box_SupportInfo}
