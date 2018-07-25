@@ -12,6 +12,7 @@ var EventManager = remixLib.EventManager
 
 var txHelper = require('./txHelper')
 
+const COMPILER_API_GATEWAY = 'https://staging.iele.dev-mantis.iohkdev.io/remix/api'
 /*
   trigger compilationFinished, compilerLoaded, compilationStarted, compilationDuration
 */
@@ -82,7 +83,7 @@ function Compiler (handleImportCall) {
    * Reference:
    * https://solidity.readthedocs.io/en/latest/using-the-compiler.html?highlight=error-types#error-types
    */
-  function formatSolidityErrors(message) {
+  function parseSolidityErrors(message) {
     message = message.trim().replace('Warning: This is a pre-release compiler version, please do not use it in production.', '')
     let end = message.indexOf('\n=====')
     if (end >= 0) {
@@ -123,21 +124,115 @@ function Compiler (handleImportCall) {
     })
   }
 
+  /**
+   * @description Parse the IELE code
+   * @param {string} ieleCode - The iele code
+   * @param {string} optionalFilePath - which file this iele code belongs to. {optional}
+   * @return {{[key:string]:string}}
+   */
+  function parseIELECode(ieleCode, optionalFilePath) {
+    const lines = ieleCode.split('\n')
+    const starts = []
+    lines.forEach((line, index)=> {
+      if (line.match(/^\s*contract\s+"([^:]+?):([^"]+?)"/)) { // start of contract
+        starts.push(index)
+      }
+    })
+    const output = {}
+    starts.forEach((start, index)=> {
+      const end = (index === starts.length - 1 ? lines.length : starts[index + 1])
+      const arr = []
+      const contractName = lines[start].replace('contract', '').trim().replace(/{$/, '').trim()
+      let filePath
+      if (contractName.match(/^"([^:]+?):([^"]+?)"$/) && !optionalFilePath) {
+        filePath = contractName.match(/^"([^:]+?):([^"]+?)"$/)[1]
+      } else {
+        filePath = optionalFilePath
+      }
+      for (let i = start; i < end; i++) {
+        if (lines[i].match(/^\s*\/\//)) { // escape comment
+          continue
+        }
+        arr.push(lines[i])
+      }
+      if (!(filePath in output)) {
+        output[filePath] = {}
+      }
+      if (!(contractName in output[filePath]))
+
+      output[filePath][contractName] = arr.join('\n')
+    })
+    return output
+  }
+
+  /**
+   * @description compile IELE code
+   * @param {string} ieleCode
+   * @return {{errors: any[], contracts: {[key:string]:{[key:string]: {assembly: string, bytecode: string, abi: object}}}}}
+   */
+  async function compileIELECode(ieleCode) {
+    const parsed = parseIELECode(ieleCode)
+    console.log('parsed: ', parsed)
+    const contracts = {}
+    const errors = []
+    for (const filePath in parsed) {
+      contracts[filePath] = {}
+      const ieleFilePath = filePath.replace(/\.sol$/, '.iele')
+      for (const contractName in parsed[filePath]) {
+        const ieleCode = parsed[filePath][contractName]
+        const response = await window['fetch'](COMPILER_API_GATEWAY, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            method: 'iele_asm',
+            params: [ieleFilePath, {[ieleFilePath]: ieleCode}],
+            jsonrpc: '2.0'
+          })
+        })
+        const json = await response.json()
+        if (json['error']) {
+          const message = json['error']['data'].toString()
+          errors.push({
+            component: 'general',
+            formattedMessage: message,
+            severity: 'error',
+            message
+          })
+        }
+        const r = json['result']
+        const bytecode = isNaN('0x' + r) ? '' : r
+        const ieleAbi = retrieveIELEAbi(ieleCode, contractName)
+        contracts[filePath][contractName] = {
+          assembly: ieleCode,
+          bytecode: bytecode,
+          abi: ieleAbi,
+        }
+      }
+    }
+    return {
+      contracts,
+      errors
+    }
+  }
+
   async function compileSolidityToIELE(result, source, cb) {
     const sources = source.sources
+    const target = source.target
     delete result["errors"]
     delete result["error"]
 
     async function helper(sources, target) {
       // console.log('@compileSolidityToIELE', result, source)
-      const apiGateway = 'https://staging.iele.dev-mantis.iohkdev.io/remix/api'
       const params = [target, {}]
       for (const filePath in sources) {
         params[1][filePath] = sources[filePath].content
       }
       try {
         // get IELE assembly
-        const response1 = await window['fetch'](apiGateway, {
+        const response1 = await window['fetch'](COMPILER_API_GATEWAY, {
           method: 'POST',
           mode: 'cors',
           headers: {
@@ -153,25 +248,39 @@ function Compiler (handleImportCall) {
         if (json1['error']) {
           throw json1['error']['data'].toString()
         }
-        // console.log('- json1: ', json1)
   
         let code = json1['result']
         const index = code.indexOf('\n=====')         // TODO: multiple .sol files will produce multiple ====
         code = code.slice(index, code.length)
         code = code.replace(/^IELE\s+assembly\s*\:\s*$/mgi, '')
         const ieleCode = code.replace(/^=====/mg, '// =====').trim()
-        const solidityErrors = formatSolidityErrors(json1['result'])
+        let errors = parseSolidityErrors(json1['result'])
   
-        // console.log('- ieleCode: |' + ieleCode + '|')
         if (!ieleCode) { // error. eg ballot.sol
-          if (solidityErrors.length) {
+          if (errors.length) {
             throw {
-              errors: solidityErrors
+              errors: errors
             }
           } else {
             throw json1['result']
           }
         }
+
+        try {
+          const r = await compileIELECode(ieleCode)
+          for (const filePath in r.contracts) {
+            for (const contractNameSlug in r.contracts[filePath]) {
+              const {assembly, bytecode, abi} = r.contracts[filePath][contractNameSlug]
+              const contractName = contractNameSlug.replace(/"/g, '').split(':')[1]
+              console.log(contractName, assembly, bytecode, abi)
+              console.log(result)
+            }
+          }
+          errors = errors.concat(r.errors)
+        } catch(error) {
+          throw error
+        }
+
         const newTarget = target.replace(/\.sol$/, '.iele')
         const contractNamesMatch = ieleCode.match(/\s*contract\s+(.+?){\s*/ig) // the last contract is the main contract (from Dwight)
         let contractName = ""
@@ -181,7 +290,7 @@ function Compiler (handleImportCall) {
         const targetContractName = contractName.slice(contractName.lastIndexOf(':')+1, contractName.length).replace(/"$/, '')
   
         // Get IELE Binary code
-        const response2 = await window['fetch'](apiGateway, {
+        const response2 = await window['fetch'](COMPILER_API_GATEWAY, {
           method: 'POST',
           mode: 'cors',
           headers: {
@@ -232,12 +341,12 @@ function Compiler (handleImportCall) {
         contracts[targetContractName]['vm'] = 'ielevm'
         contracts[targetContractName]['sourceLanguage'] = 'solidity'
         delete(contracts[targetContractName]['evm'])
-        if (solidityErrors.length) {
-          result['errors'] = solidityErrors
+        if (errors.length) {
+          result['errors'] = errors
         }
   
         // Get Solidity ABI 
-        const response3 = await window['fetch'](apiGateway, {
+        const response3 = await window['fetch'](COMPILER_API_GATEWAY, {
           method: 'POST',
           mode: 'cors',
           headers: {
@@ -269,26 +378,23 @@ function Compiler (handleImportCall) {
       }
     }
 
-    const asyncFunctions = [];
-    for (const target in sources) {
-      try {
-        await helper(sources, target)
-      } catch(error) {
-        if (typeof(error) === 'string' ||
-            (error.stack && error.message && typeof(error.stack) === 'string' && typeof(error.message) === 'string') // Exception
-        ) {
-          const message = error.toString()
-          return cb({
-            error: {
-              component: 'general',
-              formattedMessage: message,
-              severity: 'error',
-              message
-            }
-          })
-        } else {
-          return cb(error)
-        }
+    try {
+      await helper(sources, target)
+    } catch(error) {
+      if (typeof(error) === 'string' ||
+          (error.stack && error.message && typeof(error.stack) === 'string' && typeof(error.message) === 'string') // Exception
+      ) {
+        const message = error.toString()
+        return cb({
+          error: {
+            component: 'general',
+            formattedMessage: message,
+            severity: 'error',
+            message
+          }
+        })
+      } else {
+        return cb(error)
       }
     }
     return cb(result)
@@ -311,13 +417,11 @@ function Compiler (handleImportCall) {
   }
 
   function compileIELE(sources, target) {
-    // console.log('@compileIELE', sources, target)
-    const apiGateway = 'https://5c177bzo9e.execute-api.us-east-1.amazonaws.com/prod'
     const params = [target, {}]
     for (const filePath in sources) {
       params[1][filePath] = sources[filePath].content
     }
-    window['fetch'](apiGateway, {
+    window['fetch'](COMPILER_API_GATEWAY, {
       method: 'POST',
       mode: 'cors',
       headers: {
