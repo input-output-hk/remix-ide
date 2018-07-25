@@ -25,7 +25,7 @@ module.exports = class SettingsTab {
       el: null,
       optionVM: null, personal: null, optimize: null, warnPersonalMode: null,
       pluginInput: null, versionSelector: null, version: null,
-      theme: { dark: null, light: null },
+      theme: { dark: null, light: null, cardano: null },
       config: {
         solidity: null, general: null, themes: null,
         plugin: null, remixd: null, localremixd: null
@@ -42,7 +42,7 @@ module.exports = class SettingsTab {
     self.data.optimize = !!self._components.queryParams.get().optimize
     self._components.queryParams.update({ optimize: self.data.optimize })
     self._api.setOptimize(self.data.optimize, false)
-    self.data.currentTheme = self._components.themeStorage.get('theme') || 'light'
+    self.data.currentTheme = self._components.themeStorage.get('theme') || 'cardano'
     self._events.compiler.register('compilerLoaded', (version) => self.setVersionText(version))
     self.fetchAllVersion((allversions, selectedVersion) => {
       self.data.allversions = allversions
@@ -81,6 +81,7 @@ module.exports = class SettingsTab {
       </select>`
     if (self.data.allversions && self.data.selectedVersion) self._updateVersionSelector()
     self._view.version = yo`<span id="version"></span>`
+    self._view.theme.cardano = yo`<input onchange=${onswitch2CardanoTheme} class="${css.col1}" name="theme" id="themeCardano" type="radio">`
     self._view.theme.light = yo`<input onchange=${onswitch2lightTheme} class="${css.col1}" name="theme" id="themeLight" type="radio">`
     self._view.theme.dark = yo`<input onchange=${onswitch2darkTheme} class="${css.col1}" name="theme" id="themeDark" type="radio">`
     self._view.theme[self.data.currentTheme].setAttribute('checked', 'checked')
@@ -118,7 +119,7 @@ module.exports = class SettingsTab {
         <div class=${css.title}>Gist Access Token</div>
         <div class="${css.crowNoFlex}">Manage the access token used to publish to Gist.</div>
         <div class="${css.crowNoFlex}">Go to github token page (link below) to create a new token and save it in Remix. Make sure this token has only 'create gist' permission.</div>
-        <div class="${css.crowNoFlex}"><a target="_blank" href="https://github.com/settings/tokens">https://github.com/settings/tokens</a></div>
+        <div class="${css.crowNoFlex}"><a class="${css.linkStyle}" target="_blank" href="https://github.com/settings/tokens">https://github.com/settings/tokens</a></div>
         <div class="${css.crowNoFlex}">${self._view.gistToken}</div>
       </div>`
     self._view.config.themes = yo`
@@ -127,6 +128,10 @@ module.exports = class SettingsTab {
         <div class=${css.attention}>
           <i title="Select the theme" class="${css.icon} fa fa-exclamation-triangle" aria-hidden="true"></i>
           <span>Selecting a theme will trigger a page reload</span>
+        </div>
+        <div class="${css.crow}">
+          ${self._view.theme.cardano}
+          <label for="themeCardano">Cardano Theme</label>
         </div>
         <div class="${css.crow}">
           ${self._view.theme.light}
@@ -159,8 +164,8 @@ module.exports = class SettingsTab {
           it can also be used to setup a development environment.
         </div>
         <div class="${css.crow}">More infos:</div>
-        <div class="${css.crow}"><a target="_blank" href="https://github.com/ethereum/remixd"> https://github.com/ethereum/remixd</a></div>
-        <div class="${css.crow}"><a target="_blank" href="https://remix.readthedocs.io/en/latest/tutorial_remixd_filesystem">http://remix.readthedocs.io/en/latest/tutorial_remixd_filesystem.html</a></div>
+        <div class="${css.crow}"><a class="${css.linkStyle}" target="_blank" href="https://github.com/ethereum/remixd"> https://github.com/ethereum/remixd</a></div>
+        <div class="${css.crow}"><a class="${css.linkStyle}" target="_blank" href="https://remix.readthedocs.io/en/latest/tutorial_remixd_filesystem">http://remix.readthedocs.io/en/latest/tutorial_remixd_filesystem.html</a></div>
         <div class="${css.crow}">Installation: <pre class=${css.remixdinstallation}>npm install remixd -g</pre></div>
       </div>`
     self._view.config.localremixd = yo`
@@ -169,12 +174,12 @@ module.exports = class SettingsTab {
         <div class="${css.crow}">
           as a NPM module:
         </div>
-        <a target="_blank" href="https://www.npmjs.com/package/remix-ide">https://www.npmjs.com/package/remix-ide</a>
+        <a class="${css.linkStyle}" target="_blank" href="https://www.npmjs.com/package/remix-ide">https://www.npmjs.com/package/remix-ide</a>
         <pre class=${css.remixdinstallation}>npm install remix-ide -g</pre>
         <div class="${css.crow}">
           as an electron app:
         </div>
-        <a target="_blank" href="https://github.com/horizon-games/remix-app">https://github.com/horizon-games/remix-app</a>
+        <a class="${css.linkStyle}" target="_blank" href="https://github.com/horizon-games/remix-app">https://github.com/horizon-games/remix-app</a>
       </div>`
     self._view.el = yo`
       <div class="${css.settingsTabView} "id="settingsView">
@@ -197,6 +202,10 @@ module.exports = class SettingsTab {
       }
       // @TODO: BAD! REFACTOR: no module should trigger events of another modules emitter
       self._events.rhp.trigger('plugin-loadRequest', [json])
+    }
+    function onswitch2CardanoTheme (event) {
+      styleGuide.switchTheme('cardano')
+      window.location.reload()
     }
     function onswitch2darkTheme (event) {
       styleGuide.switchTheme('dark')
@@ -316,6 +325,9 @@ const css = csjs`
   .crowNoFlex {
     overflow: auto;
     clear: both;
+  }
+  .linkStyle {
+    color: ${styles.appProperties.specialText_Color};
   }
   .attention {
     margin-bottom: 1em;

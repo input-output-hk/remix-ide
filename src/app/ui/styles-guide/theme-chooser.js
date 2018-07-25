@@ -1,6 +1,7 @@
 // var remixLib = require('remix-lib')
 var styleGuideLight = require('./style-guide')
 var styleGuideDark = require('./styleGuideDark')
+var styleGuideCardano = require('./styleGuideCardano')
 var Storage = require('remix-lib').Storage
 module.exports = {
 
@@ -9,11 +10,13 @@ module.exports = {
     if (themeStorage.exists('theme')) {
       if (themeStorage.get('theme') === 'dark') {
         return styleGuideDark()
-      } else {
+      } else if (themeStorage.get('theme') === 'light') {
         return styleGuideLight()
+      } else {
+        return styleGuideCardano()
       }
     } else {
-      return styleGuideLight()
+      return styleGuideCardano()
     }
   },
 
@@ -25,7 +28,7 @@ module.exports = {
     } else if (theme === 'light') {
       return styleGuideLight()
     } else {
-      return styleGuideLight()
+      return styleGuideCardano()
     }
   }
 }

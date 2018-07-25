@@ -36,7 +36,7 @@ var css = yo`<style>
 .sol.warning .close {
     font-weight: bold;
     position: absolute;
-    color: hsl(0, 0%, 0%); /* black in style-guide.js */
+    color: ${styles.appProperties.mainText_Color};
     top: 0;
     right: 0;
     padding: 0.5em;
@@ -44,7 +44,7 @@ var css = yo`<style>
 
 .sol.error {
     background-color: ${styles.rightPanel.message_Error_BackgroundColor};
-    border: .2em dotted ${styles.rightPanel.message_Error_BorderColor};
+    border: .2em solid ${styles.rightPanel.message_Error_BorderColor};
     color: ${styles.rightPanel.message_Error_Color};
 }
 
@@ -55,12 +55,12 @@ var css = yo`<style>
 
 .sol.staticAnalysisWarning {
   background-color: ${styles.colors.lightViolet};
-  color: ${styles.colors.black};  
+  color: ${styles.appProperties.mainText_Color};  
 }
 
 .sol.success {
   background-color: ${styles.rightPanel.message_Success_BackgroundColor};
-  border: .2em dotted ${styles.rightPanel.message_Success_BorderColor};
+  border: .2em solid ${styles.rightPanel.message_Success_BorderColor};
   color: ${styles.rightPanel.message_Success_Color};
 }</style>`
 

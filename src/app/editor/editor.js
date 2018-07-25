@@ -28,7 +28,7 @@ setTheme((path, theme) => {
 
 var css = csjs`
   .ace-editor {
-    background-color  : ${styles.editor.backgroundColor_Editor};
+    background-color  : ${styles.editor.backgroundColor_Editor} !important;
     width     : 100%;
   }
 `
@@ -37,7 +37,7 @@ document.head.appendChild(yo`
     .ace-tm .ace_gutter,
     .ace-tm .ace_gutter-active-line,
     .ace-tm .ace_marker-layer .ace_active-line {
-        background-color: ${styles.editor.backgroundColor_Tabs_Highlights};
+        background-color: ${styles.editor.backgroundColor_Editor};
     }
     .ace_gutter-cell.ace_breakpoint{
       background-color: ${styles.editor.backgroundColor_DebuggerMode};

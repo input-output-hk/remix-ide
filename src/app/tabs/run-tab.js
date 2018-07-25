@@ -539,7 +539,7 @@ function settings (container, appAPI, appEvents, opts) {
   var environmentExtraEl = yo`
     <div id="environment-extra-section">
       <div class="${css.crow}">
-        <div class="${css.rvButton}" style="margin-left:0;width:164px;background-color:hsla(45,100%,75%,0.5);display:none;" onclick=${connectToCustomRPC}>Connect to Custom RPC</div>
+        <div class="${css.rvButton}" style="margin-left:0;width:164px;" onclick=${connectToCustomRPC}>Connect to Custom RPC</div>
       </div>
     </div>`
 
@@ -561,9 +561,9 @@ function settings (container, appAPI, appEvents, opts) {
         <div class="${css.rvButton}" style="margin-bottom:0;" onclick=${sendCustomTransaction}>Send transaction</div>
       </div>  
       <div class="${css.crow}">
-        <div class="${css.rvButton}" style="margin-left:0;background-color:hsla(45, 100%, 75%, 0.5);" onclick=${importAccount}>Import account</div>
-        <div class="${css.rvButton}" style="background-color:hsla(45, 100%, 75%, 0.5);" onclick=${newAccount}>Create account</div>
-        <div class="${css.rvButton}" style="background-color:hsla(45, 100%, 75%, 0.5);" onclick=${requestFromFaucet} id="request-from-faucet-btn">${requestFundsIcon}Get funds</div>
+        <div class="${css.rvButton}" style="margin-left:0;" onclick=${importAccount}>Import account</div>
+        <div class="${css.rvButton}" onclick=${newAccount}>Create account</div>
+        <div class="${css.rvButton}" onclick=${requestFromFaucet} id="request-from-faucet-btn">Request funds</div>
       </div>
     </div>
   `

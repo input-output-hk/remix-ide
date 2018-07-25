@@ -2,6 +2,18 @@ var csjs = require('csjs-inject')
 var styleGuide = require('../../ui/styles-guide/theme-chooser')
 var styles = styleGuide.chooser()
 
+var Storage = require('remix-lib').Storage
+var themeStorage = new Storage('style:')
+
+// Cardano theme overrides
+if (themeStorage.exists('theme')) {
+  if (themeStorage.get('theme') === 'cardano') {
+    var searchIconColour = styles.colors.primaryAccent;
+  } else {
+    searchIconColour = styles.colors.veryLightGrey
+  }
+}
+
 var css = csjs`
   .panel              {
     position          : relative;
@@ -129,7 +141,7 @@ var css = csjs`
     border-bottom-left-radius   : 0px;
   }
   .searchIcon {
-    background-color            : ${styles.colors.veryLightGrey};
+    background-color            : ${searchIconColour};
     color                       : ${styles.terminal.icon_Color_Menu};
     height                      : 25px;
     width                       : 25px;
