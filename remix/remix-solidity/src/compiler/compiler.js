@@ -723,25 +723,27 @@ function Compiler (handleImportCall) {
     // eslint-disable-next-line no-useless-escape
     // var importRegex = /^\s*import\s*[\'\"]([^\'\"]+)[\'\"];/g  // @rv: This regexp is wrong
 
-    for (var fileName in files) {
-      let match
-      const importRegex = /[\s^]import\s*[\'\"]([^\'\"]+)[\'\"]\s*;/g
-      while ((match = importRegex.exec(files[fileName].content))) {
-        var importFilePath = match[1]
-        if (importFilePath.startsWith('./')) {
-          var path = /(.*\/).*/.exec(target)
-          if (path !== null) {
-            importFilePath = importFilePath.replace('./', path[1])
-          } else {
-            importFilePath = importFilePath.slice(2)
+    for (const fileName in files) {
+      const lines = files[fileName].content.split('\n')
+      lines.forEach((line, index)=> {
+        const match = line.match(/^\s*import\s*[\'\"]([^\'\"]+)[\'\"]\s*;/)
+        if (match) {
+          let importFilePath = match[1]
+          if (importFilePath.startsWith('./')) {
+            const path = /(.*\/).*/.exec(target)
+            if (path !== null) {
+              importFilePath = importFilePath.replace('./', path[1])
+            } else {
+              importFilePath = importFilePath.slice(2)
+            }
+          }
+  
+          // FIXME: should be using includes or sets, but there's also browser compatibility..
+          if (importHints.indexOf(importFilePath) === -1) {
+            importHints.push(importFilePath)
           }
         }
-
-        // FIXME: should be using includes or sets, but there's also browser compatibility..
-        if (importHints.indexOf(importFilePath) === -1) {
-          importHints.push(importFilePath)
-        }
-      }
+      }) 
     }
 
     while (importHints.length > 0) {

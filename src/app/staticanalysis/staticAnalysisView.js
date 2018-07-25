@@ -23,7 +23,7 @@ function staticAnalysisView (appAPI, compilerEvent) {
   compilerEvent.register('compilationFinished', function (success, data, source) {
     // console.log('@staticAnalysisView.js compilationFinished:\n', success, data, source)
     // TODO: @rv add .iele static analysis support
-    if (!source.target.endsWith('.sol')) { return; }
+    if (source.target && !source.target.endsWith('.sol')) { return; }
     // TODO: @rv add .sol static analysis support for iele vm.
     for (const file in data.contracts) {
       for (const contractName in data.contracts[file]) {
