@@ -539,7 +539,7 @@ function settings (container, appAPI, appEvents, opts) {
   var environmentExtraEl = yo`
     <div id="environment-extra-section">
       <div class="${css.crow}">
-        <div class="${css.rvButton}" style="margin-left:0;width:164px;" onclick=${connectToCustomRPC}>Connect to Custom RPC</div>
+        <div class="${css.rvButton}" style="margin-left:0;width:164px;display:none;" onclick=${connectToCustomRPC}>Connect to Custom RPC</div>
       </div>
     </div>`
 
@@ -563,7 +563,7 @@ function settings (container, appAPI, appEvents, opts) {
       <div class="${css.crow}">
         <div class="${css.rvButton}" style="margin-left:0;" onclick=${importAccount}>Import account</div>
         <div class="${css.rvButton}" onclick=${newAccount}>Create account</div>
-        <div class="${css.rvButton}" onclick=${requestFromFaucet} id="request-from-faucet-btn">Request funds</div>
+        <div class="${css.rvButton}" onclick=${requestFromFaucet} id="request-from-faucet-btn">${requestFundsIcon}Get funds</div>
       </div>
     </div>
   `
