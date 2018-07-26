@@ -102,6 +102,8 @@ class MultiParamManager {
           return yo`<div class="${css.multiArg}"><label for="${inp.name}"> ${inp.name}: </label><input placeholder="${inp.type}" title="${inp.name}"></div>`
         })}
       </div>`
+    } else {
+      return yo`<div class="${css.multifields}"></div>`
     }
   }
 
