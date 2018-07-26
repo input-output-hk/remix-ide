@@ -23,7 +23,7 @@ var confirmDialog = require('./app/execution/confirmDialog')
 var keythereum = require("keythereum")
 var RLP = require('rlp')
 
-// @rv: hack to fix for empty password
+// @rv: hack to fix empty password bug.
 keythereum.crypto.pbkdf2 = null // Hack to force keythereum to use `sjcl` package instead of `crypto-browserify` package because `crypto-browserify` doesn't work well on Safari for wallet that has empty password.
 
 /*
