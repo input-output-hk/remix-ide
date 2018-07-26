@@ -284,9 +284,9 @@ Please make a backup of your contracts and start using http://remix.ethereum.org
       var splitted = /([^/]+)\/(.*)$/g.exec(url)
       async.tryEach([
         (cb) => { importFileCb('localhost/installed_contracts/' + url, cb) },
-        (cb) => { if (!splitted) { cb('url not parseable' + url) } else { importFileCb('localhost/installed_contracts/' + splitted[1] + '/contracts/' + splitted[2], cb) } },
+        (cb) => { if (!splitted) { cb('url not parseable: ' + url) } else { importFileCb('localhost/installed_contracts/' + splitted[1] + '/contracts/' + splitted[2], cb) } },
         (cb) => { importFileCb('localhost/node_modules/' + url, cb) },
-        (cb) => { if (!splitted) { cb('url not parseable' + url) } else { importFileCb('localhost/node_modules/' + splitted[1] + '/contracts/' + splitted[2], cb) } }],
+        (cb) => { if (!splitted) { cb('url not parseable: ' + url) } else { importFileCb('localhost/node_modules/' + splitted[1] + '/contracts/' + splitted[2], cb) } }],
         (error, result) => { filecb(error, result) }
       )
     } else {
@@ -696,7 +696,7 @@ Please make a backup of your contracts and start using http://remix.ethereum.org
   // ----------------- Renderer -----------------
   var rendererAPI = {
     error: (file, error) => {
-      if (file === config.get('currentFile')) {
+      if (file === config.get('currentFile')) { // @rv: this line might have problem. If the file is not currentFile, then annotation will not be added.
         editor.addAnnotation(error)
       }
     },
