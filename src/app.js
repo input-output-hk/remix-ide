@@ -696,7 +696,7 @@ Please make a backup of your contracts and start using http://remix.ethereum.org
   // ----------------- Renderer -----------------
   var rendererAPI = {
     error: (file, error) => {
-      if (file === config.get('currentFile')) {
+      if (file === config.get('currentFile')) { // @rv: this line might have problem. If the file is not currentFile, then annotation will not be added.
         editor.addAnnotation(error)
       }
     },
