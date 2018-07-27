@@ -155,8 +155,8 @@ function ExecutionContext () {
         else if (id === '3') name = 'Ropsten'
         else if (id === '4') name = 'Rinkeby'
         else if (id === '42') name = 'Kovan'
-        else if (id === '13137357') name = 'Goguen' // @rv: KEVM testnet
-        else if (id === '133753763') name = 'Goguen' // @rv: IELE testnet
+        else if (id === '13137357') name = 'KEVM' // @rv: KEVM testnet
+        else if (id === '133753763') name = 'IELE' // @rv: IELE testnet
         else name = 'Custom'
 
         if (customRPC) { // @rv: Update transactionDetailsLinksRV
