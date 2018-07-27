@@ -541,7 +541,7 @@ function settings (container, appAPI, appEvents, opts) {
   var environmentExtraEl = yo`
     <div id="environment-extra-section">
       <div class="${css.crow}">
-        <div class="${css.rvButton}" style="margin-left:0;width:164px;${location.hostname.match(/localhost|127\.0\.0\.1/) ? '':'display:none;'}" onclick=${connectToCustomRPC}>Connect to Custom RPC</div>
+        <div class="${css.rvButton}" style="margin-left:0;width:164px;display:none;" onclick=${connectToCustomRPC}>Connect to Custom RPC</div>
       </div>
     </div>`
 
