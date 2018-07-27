@@ -638,17 +638,8 @@ function settings (container, appAPI, appEvents, opts) {
       return addTooltip('Your request is being processed')
     }
     const context = executionContext.getProvider()
-    let targetUrl = '',
-        txLink = ''
-    if (context === 'custom-rpc-kevm-testnet') {
-      targetUrl = `https://kevm-testnet.iohkdev.io:8099/faucet?address=${address}`
-      txLink = `https://kevm-testnet.iohkdev.io/transaction/`
-    } else if (context === 'custom-rpc-iele-testnet') {
-      targetUrl = `https://staging.iele.dev-mantis.iohkdev.io:8099/faucet?address=${address}`
-      txLink = `https://staging.iele.dev-mantis.iohkdev.io/transaction/`
-    } else {
-      return addTooltip('No faucet found for ' + context)
-    }
+    let targetUrl = window.location.protocol + `//` + window.location.hostname + ':8099/faucet?address=${address}`,
+        txLink = `/transaction/`;
     appAPI.logMessage(`request from Faucet pending...`)
     requestFundsIcon.classList.add(css.spinningIcon)
     setTimeout(()=> { // Delay the request for a bit.
@@ -811,7 +802,7 @@ function settings (container, appAPI, appEvents, opts) {
       name: 'IELE Testnet',
       context: 'custom-rpc-iele-testnet',
       chainId: undefined,
-      rpcUrl: 'https://staging.iele.dev-mantis.iohkdev.io:8546/',
+      rpcUrl: window.location.protocol + `//` + window.location.hostname + ':8546/',
       vm: 'ielevm'
     })
 
