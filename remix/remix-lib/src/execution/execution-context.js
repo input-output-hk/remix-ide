@@ -299,8 +299,6 @@ var transactionDetailsLinks = {
 }
 
 var transactionDetailsLinksRV = {
-  '13137357': 'https://kevm-testnet.iohkdev.io/transaction/',
-  '133753763': 'https://iele-testnet.iohkdev.io/transaction/',
 }
 
 module.exports = new ExecutionContext()
