@@ -524,11 +524,13 @@ function settings (container, appAPI, appEvents, opts) {
       <div class=${css.environment}>
         ${net}
         <select id="selectExEnvOptions" onchange=${updateNetwork} class="${css.select}">
-          <option
-            title="IELE Testnet"
-            value="custom-rpc-iele-testnet" name="executionContext"
-            selected> IELE Testnet
-          </option>
+          ${(opts.config.get('custom-rpc-list') || []).map((customRPC)=> {
+            return yo`<option
+              title="${customRPC.name || "Custom"}"
+              value="${customRPC.context}" name="executionContext"
+              selected> ${customRPC.name || customRPC.rpcUrl}
+            </option>`
+          })}
         </select>
         <a href="https://github.com/ethereum/EIPs/blob/master/EIPS/eip-155.md" target="_blank"><i class="${css.icon} fa fa-info"></i></a>
         <i id="remove-custom-rpc-icon" class="${css.icon} fa fa-times" title="Remove selected Custom RPC" style="display:none;" onclick=${removeCustomRPC}></i>
@@ -539,7 +541,7 @@ function settings (container, appAPI, appEvents, opts) {
   var environmentExtraEl = yo`
     <div id="environment-extra-section">
       <div class="${css.crow}">
-        <div class="${css.rvButton}" style="margin-left:0;width:164px;display:none;" onclick=${connectToCustomRPC}>Connect to Custom RPC</div>
+        <div class="${css.rvButton}" style="margin-left:0;width:164px;${location.hostname.match(/localhost|127\.0\.0\.1/) ? '':'display:none;'}" onclick=${connectToCustomRPC}>Connect to Custom RPC</div>
       </div>
     </div>`
 
@@ -638,8 +640,15 @@ function settings (container, appAPI, appEvents, opts) {
       return addTooltip('Your request is being processed')
     }
     const context = executionContext.getProvider()
-    let targetUrl = window.location.protocol + `//` + window.location.hostname + ':8099/faucet?address=${address}`,
-        txLink = `/transaction/`;
+    let targetUrl = '',
+        txLink = ''
+    const customRPC = (opts.config.get('custom-rpc-list') || []).filter((customRPC)=> customRPC.context === context)[0]
+    if (!customRPC) {
+      return addTooltip('No faucet found for ' + context)	
+    } else {
+      targetUrl = customRPC.rpcUrl.replace(/\:\d+\/?$/, '').replace(/\/*$/, '') + `:8099/faucet?address=${address}`
+      txLink = customRPC.rpcUrl.replace(/\:\d+\/?$/, '').replace(/\/*$/, '') + `/transaction/`
+    }
     appAPI.logMessage(`request from Faucet pending...`)
     requestFundsIcon.classList.add(css.spinningIcon)
     setTimeout(()=> { // Delay the request for a bit.
@@ -792,9 +801,10 @@ function settings (container, appAPI, appEvents, opts) {
       name: 'IELE Testnet',
       context: 'custom-rpc-iele-testnet',
       chainId: undefined,
-      rpcUrl: window.location.protocol + `//` + window.location.hostname + ':8546/',
+      rpcUrl: 'https://iele-testnet.iohkdev.io:8546/',
       vm: 'ielevm'
     })
+    // You can click `Connect to Custom RPC` button to connect to custom rpc node to do your development testing.
 
     // TODO: remove the `filter` below in the future when IELE testnet launches
     opts.config.set('custom-rpc-list', customRPCList.filter((x)=> x.context !== 'custom-rpc-iele-testnet-dev'))
@@ -811,10 +821,10 @@ function toggleRVElements() {
     const context = executionContext.getProvider()
     if (context === 'custom-rpc-kevm-testnet' ||
         context === 'custom-rpc-iele-testnet') {
-      $('#request-from-faucet-btn').show()
+      // $('#request-from-faucet-btn').show()
       $('#remove-custom-rpc-icon').hide()
     } else {
-      $('#request-from-faucet-btn').hide()
+      // $('#request-from-faucet-btn').hide()
       $('#remove-custom-rpc-icon').show()
     }
   } else {
