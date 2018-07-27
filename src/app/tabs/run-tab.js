@@ -788,16 +788,6 @@ function settings (container, appAPI, appEvents, opts) {
       }
     }
 
-    /*
-    addIfNotExists({
-      name: 'KEVM Testnet',
-      context: 'custom-rpc-kevm-testnet',
-      chainId: undefined,
-      rpcUrl: 'https://kevm-testnet.iohkdev.io:8546/',
-      vm: 'evm'
-    })
-    */
-
     addIfNotExists({
       name: 'IELE Testnet',
       context: 'custom-rpc-iele-testnet',
