@@ -12,7 +12,7 @@ var EventManager = remixLib.EventManager
 
 var txHelper = require('./txHelper')
 
-const COMPILER_API_GATEWAY = 'https://staging.iele.dev-mantis.iohkdev.io/remix/api'
+const COMPILER_API_GATEWAY = 'api'
 /*
   trigger compilationFinished, compilerLoaded, compilationStarted, compilationDuration
 */
