@@ -102,7 +102,7 @@ function runTab (appAPI = {}, appEvents = {}, opts = {}) {
   <div>
     ${settings(container, appAPI, appEvents, opts)}
     ${contractDropdown(event, appAPI, appEvents, opts, self)}
-    ${''/*recorderCard.render() // @rv: disabled recorder */} 
+    ${''/*recorderCard.render() // @rv: disabled recorder */}
     ${self._view.instanceContainer}
   </div>
   `
@@ -121,7 +121,7 @@ function runTab (appAPI = {}, appEvents = {}, opts = {}) {
 
   function setFinalContext () {
     // @rv: toggle RV elements
-    toggleRVElements() 
+    toggleRVElements()
     // set the final context. Cause it is possible that this is not the one we've originaly selected
     selectExEnv.value = executionContext.getProvider()
     fillAccountsList(appAPI, opts, el)
@@ -360,7 +360,7 @@ function contractDropdown (events, appAPI, appEvents, opts, self) {
   function setInputParamsPlaceHolder () {
     createPanel.innerHTML = ''
     if (opts.compiler.getContract && selectContractNames.selectedIndex >= 0 && selectContractNames.children.length > 0) {
-      // @rv: support iele bytecode 
+      // @rv: support iele bytecode
       const contract = getSelectedContract().contract
       let ctrabi, vmbc;
       if (contract.object.sourceLanguage === 'solidity') { // solidity language
@@ -383,8 +383,8 @@ function contractDropdown (events, appAPI, appEvents, opts, self) {
   // DEPLOY INSTANCE
   /**
    * @rv
-   * @param {} args 
-   * @param {{sourceLanguage: string, vm: string, ielevm?:object, evm?:object, abi: object}} contract contract object 
+   * @param {} args
+   * @param {{sourceLanguage: string, vm: string, ielevm?:object, evm?:object, abi: object}} contract contract object
    */
   function createInstance (args) {
     const selectedContract = getSelectedContract()
@@ -398,7 +398,7 @@ function contractDropdown (events, appAPI, appEvents, opts, self) {
       if (selectedContract.contract.object.evm.bytecode.object.length === 0) { // evm
         modalDialogCustom.alert('This contract does not implement all functions and thus cannot be created.')
         return
-      } 
+      }
     }
 
     let constructor
@@ -524,7 +524,7 @@ function settings (container, appAPI, appEvents, opts) {
       <div class=${css.environment}>
         ${net}
         <select id="selectExEnvOptions" onchange=${updateNetwork} class="${css.select}">
-          <option 
+          <option
             title="IELE Testnet"
             value="custom-rpc-iele-testnet" name="executionContext"
             selected> IELE Testnet
@@ -559,7 +559,7 @@ function settings (container, appAPI, appEvents, opts) {
         <div class="${css.rvButton}" style="margin-bottom:0;margin-left:0;" onclick=${exportPrivateKey}>Export private key</div>
         <div class="${css.rvButton}" style="margin-bottom:0;" onclick=${removeAccount}>Remove account</div>
         <div class="${css.rvButton}" style="margin-bottom:0;" onclick=${sendCustomTransaction}>Send transaction</div>
-      </div>  
+      </div>
       <div class="${css.crow}">
         <div class="${css.rvButton}" style="margin-left:0;" onclick=${importAccount}>Import account</div>
         <div class="${css.rvButton}" onclick=${newAccount}>Create account</div>
@@ -678,7 +678,7 @@ function settings (container, appAPI, appEvents, opts) {
         } else {
           fillAccountsList(appAPI, opts, document.body)
         }
-      }) 
+      })
     }
   }
 
@@ -723,7 +723,7 @@ function settings (container, appAPI, appEvents, opts) {
         addTooltip('Failed to connect to Custom RPC: ' + error)
       } else {
         const $environmentSelect = $('#selectExEnvOptions')
-        let find = false 
+        let find = false
         const $options = $('option', $environmentSelect)
         for (let i = 0; i < $options.length; i++) {
           if ($options[i].getAttribute('value') === customRPC.context) {
@@ -754,7 +754,7 @@ function settings (container, appAPI, appEvents, opts) {
         newCustomRPCList.push(customRPCList[i])
       }
     }
-    
+
     opts.config.set('custom-rpc-list', newCustomRPCList) // update `custom-rpc-list`
 
     const newContext = newCustomRPCList.length ? newCustomRPCList[0].context : 'vm' // change selected environment
@@ -819,7 +819,7 @@ function toggleRVElements() {
     $('#account-extra-section').show()
 
     const context = executionContext.getProvider()
-    if (context === 'custom-rpc-kevm-testnet' || 
+    if (context === 'custom-rpc-kevm-testnet' ||
         context === 'custom-rpc-iele-testnet') {
       $('#request-from-faucet-btn').show()
       $('#remove-custom-rpc-icon').hide()
