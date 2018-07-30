@@ -801,9 +801,7 @@ function settings (container, appAPI, appEvents, opts) {
       name: 'IELE Testnet',
       context: 'custom-rpc-iele-testnet',
       chainId: undefined,
-      rpcUrl: ((location.hostname.match(/localhost|127\.0\.0\.1/)) ?
-                'https://iele-testnet.iohkdev.io:8546/' :
-                (location.protocol + '//' + location.hostname + ':8546/')),
+      rpcUrl: (location.protocol + '//' + location.hostname + ':8546/'),
       vm: 'ielevm'
     })
     // You can click `Connect to Custom RPC` button to connect to custom rpc node to do your development testing.
