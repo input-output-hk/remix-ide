@@ -342,6 +342,7 @@ class TxListener {
           // console.log('- this._api.resolveReceipt')
           // console.log('- * receipt, ', receipt)
           if (error) return cb(error)
+          if (!receipt) return cb("Receipt is null. It may just be delayed.");
           var address = receipt.contractAddress
           this._resolvedContracts[address] = contractName
           this._resolveFunction(contractName, contracts, tx, true)

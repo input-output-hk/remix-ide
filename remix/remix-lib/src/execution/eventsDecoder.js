@@ -24,6 +24,7 @@ class EventsDecoder {
     if (tx.isCall) return cb(null, { decoded: [], raw: [] })
     this._api.resolveReceipt(tx, (error, receipt) => {
       if (error) return cb(error)
+      if (!receipt) return cb("Receipt is null. It may just be delayed.");
       this._decodeLogs(tx, receipt, contractName, compiledContracts, cb)
     })
   }
