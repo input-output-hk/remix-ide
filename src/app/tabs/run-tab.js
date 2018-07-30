@@ -423,7 +423,7 @@ function contractDropdown (events, appAPI, appEvents, opts, self) {
                 return
               }
             }
-            if (txResult.result.status && txResult.result.status === '0x0') {
+            if (txResult.result.status === false) { // @rv: status === false (statusCode !== '0x00') means transaction execution failed.
               appAPI.logMessage(`creation of ${selectedContract.name} errored: transaction execution failed`)
               return
             }
