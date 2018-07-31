@@ -213,6 +213,9 @@ module.exports = {
         return
       }
       if (!isConstructor || funArgs.length > 0 || contract.vm === 'ielevm') {
+        if (funArgs.length !== funAbi.inputs.length) { // @rv: Make arguments mandatory
+          return callback(`Function ${funAbi.name ? `"${funAbi.name}" `: ""}argument count mismatch. Expected ${funAbi.inputs.length} argument${funAbi.inputs.length > 1 ? 's':''}, but got ${funArgs.length}.`)
+        }
         try {
           data = helper.encodeParams(funAbi, funArgs, contract.sourceLanguage, contract.vm) // @rv: Support iele
           dataHex = data.toString('hex')
