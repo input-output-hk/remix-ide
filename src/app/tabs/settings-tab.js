@@ -44,11 +44,16 @@ module.exports = class SettingsTab {
     self._api.setOptimize(self.data.optimize, false)
     self.data.currentTheme = self._components.themeStorage.get('theme') || 'cardano'
     self._events.compiler.register('compilerLoaded', (version) => self.setVersionText(version))
+    // @rv: no need to fetch solidity versions.
+    /*
     self.fetchAllVersion((allversions, selectedVersion) => {
       self.data.allversions = allversions
       self.data.selectedVersion = selectedVersion
       if (self._view.versionSelector) self._updateVersionSelector()
     })
+    */
+   // @rv: we set compiler as loaded directly
+   self._opts.compiler.onInternalCompilerLoaded()
   }
   render () {
     const self = this
@@ -86,7 +91,7 @@ module.exports = class SettingsTab {
     self._view.theme.dark = yo`<input onchange=${onswitch2darkTheme} class="${css.col1}" name="theme" id="themeDark" type="radio">`
     self._view.theme[self.data.currentTheme].setAttribute('checked', 'checked')
     self._view.config.solidity = yo`
-      <div class="${css.info}">
+      <div class="${css.info}" style="display:none;">
         <div class=${css.title}>Solidity version</div>
         <span>Current version:</span> ${self._view.version}
         <div class="${css.crow}">
@@ -269,7 +274,7 @@ module.exports = class SettingsTab {
     }
     */
    // @rv: we don't use worker
-   self._opts.compiler.loadVersion(false, url)
+   self._opts.compiler.loadVersion(false, url) 
    self.setVersionText('(loading)')
   }
   fetchAllVersion (callback) {

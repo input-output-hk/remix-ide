@@ -347,6 +347,33 @@ function Compiler (handleImportCall) {
             result.contracts[filePath][contractName]['abi'] = abi
           }
         }
+
+        // Get Solidity AST
+        const response3 = await window['fetch'](COMPILER_API_GATEWAY, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            method: 'sol2iele_ast',
+            params: params,
+            jsonrpc: '2.0'
+          })
+        })
+        const json3 = await response3.json()
+        if (json3['error']) {
+          throw json3['error']['data'].toString()
+        }
+        /*
+        const abiMap = parseSolidityCodeAbi(json2['result'])
+        for (const filePath in abiMap) {
+          for (const contractName in abiMap[filePath]) {
+            const abi = abiMap[filePath][contractName]
+            result.contracts[filePath][contractName]['abi'] = abi
+          }
+        }
+        */
       } catch(error) {
         throw error
       }
@@ -356,6 +383,7 @@ function Compiler (handleImportCall) {
       await helper(sources, target)
       return cb(result)
     } catch(error) {
+      console.log(error)
       if (typeof(error) === 'string' ||
           (error.stack && error.message && typeof(error.stack) === 'string' && typeof(error.message) === 'string') // Exception
       ) {
@@ -508,70 +536,29 @@ function Compiler (handleImportCall) {
 
   function onInternalCompilerLoaded () {
     if (worker === null) {
-      var compiler
-      if (typeof (window) === 'undefined') {
-        compiler = require('solc')
-      } else {
-        compiler = solc(window.Module)
-      }
-
-      let firstTimeCompile = true // @rv: hack the sol.js Maximum call stack size exceeded bug.
-
       compileJSON = async function (source, optimize, cb) {
-        var missingInputs = []
-        var missingInputsCallback = function (path) {
-          missingInputs.push(path)
-          return { error: 'Deferred import' }
+        const contracts = {}
+        const sources = {}
+        for (const filePath in source.sources) {
+          contracts[filePath] = {}
+          sources[filePath] = {}
+        }
+        const result = {
+          contracts: contracts,
+          sources: {}
         }
 
-        let result
-        try {
-          const input = compilerInput(source.sources, {optimize: optimize, target: source.target})
-          // @rv: hack, compile twice if this is the first time compilation.
-          try {
-            result = compiler.compileStandardWrapper(input, missingInputsCallback)
-          } catch(error) {
-            if (firstTimeCompile) {
-              firstTimeCompile = false
-              result = await new Promise((resolve, reject)=> {
-                setTimeout(()=> {
-                  try {
-                    return resolve(compiler.compileStandardWrapper(input, missingInputsCallback))
-                  } catch(error) {
-                    return reject(error)
-                  }
-                }, 1000)
-              })
-            } else {
-              throw error
-            }
-          }
-          result = JSON.parse(result)
-
-          // @rv: add `sourceLanguage` and `vm` fields
-          for (const file in result.contracts) {
-            const contracts = result.contracts[file]
-            for (const contractName in contracts) {
-              contracts[contractName]['vm'] = 'evm'
-              contracts[contractName]['sourceLanguage'] = 'solidity'
-            }
-          }
-
-          if (compileToIELE) {
-            return compileSolidityToIELE(result, source, (result)=> {
-              return compilationFinished(result, missingInputs, source)
-            })
-          }
-          
-          // console.log('@compileJSON .sol => result:\n', result)
-        } catch (exception) {
-          result = { error: 'Uncaught JavaScript exception:\n' + exception }
+        if (compileToIELE) {
+          return compileSolidityToIELE(result, source, (result)=> {
+            console.log('Compiled result: ', result)
+            return compilationFinished(result, [], source)
+          })
         }
 
         // console.log('@compilationFinished: ', result)
         compilationFinished(result, missingInputs, source)
       }
-      onCompilerLoaded(compiler.version())
+      onCompilerLoaded('isolc')
     }
   }
   // exposed for use in node
@@ -687,9 +674,12 @@ function Compiler (handleImportCall) {
       // try compiling again with the new set of inputs
       internalCompile(source.sources, source.target, missingInputs)
     } else {
+      /*
+      // @rv: this is disabled
       if (source.target.endsWith('.sol')) {
         data = updateInterface(data)
       }
+      */
       self.lastCompilationResult = {
         data: data,
         source: source
