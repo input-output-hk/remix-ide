@@ -418,7 +418,7 @@ function txDetails (e, tx, data, obj) {
       transactionCost: data.tx.transactionCost,
       executionCost: data.tx.executionCost,
       blockNumber: data.tx.blockNumber,
-      nonce: data.tx.nonce,
+      nonce: data.tx.nonce
     })
     tx.appendChild(table)
   }
@@ -437,7 +437,7 @@ function createTable (opts) {
       '0x06': 'deploying to an account that already exists',
       '0x07': 'insufficient balance to transfer',
       '0x08': 'negative balance or gas limit or call depth exceeded',
-      '0x09': 'contract being uploaded to blockchain is not well formed',
+      '0x09': 'contract being uploaded to blockchain is not well formed'
     }
     const msg = m[opts.statusCode]
     table.appendChild(yo`
@@ -499,9 +499,7 @@ function createTable (opts) {
   var gas = yo`
     <tr class="${css.tr}">
       <td class="${css.td}"> gas </td>
-      <td class="${css.td}">${opts.gas} gas
-        ${copyToClipboard(() => opts.gas)}
-      </td>
+      <td class="${css.td}">${opts.gas} gas ${copyToClipboard(() => opts.gas)}</td>
     </tr>
   `
   if (opts.gas) table.appendChild(gas)
@@ -511,9 +509,7 @@ function createTable (opts) {
     const gasPrice = yo`
     <tr class="${css.tr}">
       <td class="${css.td}"> gas price </td>
-      <td class="${css.td}">${opts.gasPrice.toString()} gas
-        ${copyToClipboard(() => opts.gasPrice.toString())}
-      </td>
+      <td class="${css.td}">${opts.gasPrice.toString()} wei ${copyToClipboard(() => opts.gasPrice.toString())}</td>
     </tr>
   `
     table.appendChild(gasPrice)
@@ -592,7 +588,7 @@ function createTable (opts) {
     <tr class="${css.tr}">
       <td class="${css.td}"> decoded input </td>
       <td class="${css.td}">${opts['decoded input']}
-        ${copyToClipboard(opts['decoded input'])}
+        ${copyToClipboard(() => opts['decoded input'])}
       </td>
     </tr>`
     table.appendChild(inputDecoded)
@@ -614,7 +610,9 @@ function createTable (opts) {
     var outputDecoded = yo`
     <tr class="${css.tr}">
       <td class="${css.td}"> decoded output </td>
-      <td class="${css.td}" id="decodedoutput" >${opts['decoded output']}</td>
+      <td class="${css.td}" id="decodedoutput" >${opts['decoded output']}
+        ${copyToClipboard(() => opts['decoded output'])}
+      </td>
     </tr>`
     table.appendChild(outputDecoded)
   }
@@ -636,15 +634,13 @@ function createTable (opts) {
   if (opts.logs) table.appendChild(logs)
 
   var val = opts.val != null ? typeConversion.toInt(opts.val) : 0
-  val = yo`
+  const valEl = yo`
     <tr class="${css.tr}">
       <td class="${css.td}"> value </td>
-      <td class="${css.td}">${val} wei
-        ${copyToClipboard(() => `${val} wei`)}
-      </td>
+      <td class="${css.td}">${val} wei ${copyToClipboard(() => val.toString())}</td>
     </tr>
   `
-  if (opts.val) table.appendChild(val)
+  if (opts.val) table.appendChild(valEl)
 
   return table
 }

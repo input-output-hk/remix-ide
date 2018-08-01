@@ -8,7 +8,7 @@ var themeStorage = new Storage('style:')
 // Cardano theme overrides
 if (themeStorage.exists('theme')) {
   if (themeStorage.get('theme') === 'cardano') {
-    var searchIconColour = styles.colors.primaryAccent;
+    var searchIconColour = styles.colors.primaryAccent
   } else {
     searchIconColour = styles.colors.veryLightGrey
   }

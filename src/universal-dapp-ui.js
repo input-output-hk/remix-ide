@@ -79,7 +79,7 @@ UniversalDAppUI.prototype.renderInstanceFromABI = function (contractABI, address
   }
 
   // check if the source language is iele
-  let isIeleLanguage = !!(contractABI.filter((x)=> x.type === 'constructor' && x.name === 'init').length)
+  let isIeleLanguage = !!(contractABI.filter((x) => x.type === 'constructor' && x.name === 'init').length)
 
   $.each(contractABI, (i, funABI) => {
     if (funABI.type !== 'function') {
@@ -112,9 +112,9 @@ UniversalDAppUI.prototype.getCallButton = function (args) {
   const self = this
   // args.funABI, args.address [fun only]
   // args.contractName [constr only]
-  function helper(lookupOnly) {  
+  function helper (lookupOnly) {
     var outputOverride = yo`<div class=${css.value}></div>` // show return value
-  
+
     function clickButton (valArr, inputsValues) {
       const newArgs = Object.assign({}, args)
       // @rv: attach `constant` to funABI if isIeleLanguage and lookupOnly
@@ -128,15 +128,15 @@ UniversalDAppUI.prototype.getCallButton = function (args) {
         outputOverride.appendChild(decoded)
       })
     }
-  
+
     const multiParamManager = new MultiParamManager(lookupOnly, args.funABI, (valArray, inputsValues, domEl) => {
       clickButton(valArray, inputsValues, domEl)
     }, self.udapp.getInputs(args.funABI), '')
-  
+
     const contractActionsContainer = yo`<div class="${css.contractActionsContainer}" >${multiParamManager.render()}</div>`
     contractActionsContainer.appendChild(outputOverride)
-  
-    return contractActionsContainer 
+
+    return contractActionsContainer
   }
 
   if (isIeleLanguage) { // @rv: display both `call` and `transact` for function.

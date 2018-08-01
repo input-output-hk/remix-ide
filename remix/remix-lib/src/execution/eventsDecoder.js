@@ -24,6 +24,7 @@ class EventsDecoder {
     if (tx.isCall) return cb(null, { decoded: [], raw: [] })
     this._api.resolveReceipt(tx, (error, receipt) => {
       if (error) return cb(error)
+      if (!receipt) return cb('Receipt is null. It may just be delayed.')
       this._decodeLogs(tx, receipt, contractName, compiledContracts, cb)
     })
   }
@@ -49,19 +50,19 @@ class EventsDecoder {
     // console.log('@eventsDecoder.js _eventABI')
     // console.log('* contract: ', contract)
     if (contract.sourceLanguage === 'iele') {
-       return {}
+      return {}
     }
-    
+
     var eventABI = {}
     var abi = new ethers.Interface(contract.abi)
     for (var e in abi.events) {
       var event = abi.events[e]
-      eventABI[ethJSUtil.sha3(new Buffer(event.signature)).toString('hex')] = { 
-        event: event.name, 
-        inputs: event.inputs, 
-        object: event, 
+      eventABI[ethJSUtil.sha3(new Buffer(event.signature)).toString('hex')] = {
+        event: event.name,
+        inputs: event.inputs,
+        object: event,
         vm: contract.vm,  // @rv
-        sourceLanguage: contract.sourceLanguage 
+        sourceLanguage: contract.sourceLanguage
       }
     }
     return eventABI
@@ -101,7 +102,7 @@ class EventsDecoder {
         if (abi.vm === 'ielevm') {
           if (abi.sourceLanguage === 'solidity') {
             let data = log.data.replace(/^0x/, '')
-            if (data.length %2 !== 0) { data = '0' + data }
+            if (data.length % 2 !== 0) { data = '0' + data }
             let flippedData = ''
             // flip data
             for (let i = 0; i < data.length; i += 2) {
@@ -111,7 +112,7 @@ class EventsDecoder {
             if (abi.inputs.types.length > 1) {
               type = {
                 type: 'tuple',
-                components: abi.inputs.types.map((t)=> {return {type: t}})
+                components: abi.inputs.types.map((t) => { return {type: t} })
               }
             } else if (abi.inputs.types.length === 1) {
               type = {
@@ -125,7 +126,7 @@ class EventsDecoder {
               // console.log('- result: ', result)
               events.push({ from: log.address, topic: topicId, event: abi.event, args: result })
             }
-          } 
+          }
           // else {
           //   events.push({ from: log.address, topic: topicId, event: abi.event, data: log.data})
           // }

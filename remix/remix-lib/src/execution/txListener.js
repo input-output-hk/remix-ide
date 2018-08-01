@@ -48,7 +48,7 @@ class TxListener {
       // console.log('* timestamp: ', timestamp)
       // console.log('* payload: ', payload)
       // console.log('* contract: ', contract)
-      //window['txResult'] = txResult
+      // window['txResult'] = txResult
 
       if (error) return
       // we go for that case if
@@ -72,7 +72,7 @@ class TxListener {
         to: to,
         input: data.startsWith('0x') ? data : '0x' + data,
         hash: txResult.transactionHash,
-        // @rv: hash here should just be undefined because it's a `call` 
+        // @rv: hash here should just be undefined because it's a `call`
         // hash: txResult.transactionHash ? txResult.transactionHash : 'call' + (from || '') + to + data,
         isCall: true,
         output,
@@ -107,7 +107,7 @@ class TxListener {
         this._resolve([tx], () => {})
       })
     })
-    
+
     function addExecutionCosts (txResult, tx) {
       if (txResult && txResult.result) {
         if (txResult.result.vm) {
@@ -127,7 +127,7 @@ class TxListener {
    * @param {object} txResult
    * @param {{funAbi: object, funArgs: object, contractBytecode: string, contractName: string, sourceLanguage: string, vm: string}} payload
    */
-  extendTransactionForIELE(tx, input, isCall, txResult, payload) {
+  extendTransactionForIELE (tx, input, isCall, txResult, payload) {
     // console.log('@extendTransactionForIELE')
     // console.log('* tx: ', tx)
     // console.log('* input: ', input)
@@ -138,18 +138,18 @@ class TxListener {
       return
     }
 
-    let output 
+    let output
     if (isCall) {
       output = txResult.result
     } else if (!(!tx.to || tx.to === '0x0')) { // not constructor
       output = txResult.result.returnData
     }
-    let decodedOutput = RLP.decode(output).map((val)=> '0x' + val.toString('hex'))
+    let decodedOutput = RLP.decode(output).map((val) => '0x' + val.toString('hex'))
     let decodedInput = RLP.decode(input.startsWith('0x') ? input : ('0x' + input))
-    let params = decodedInput[1].map((val)=> '0x' + val.toString('hex'))
+    let params = decodedInput[1].map((val) => '0x' + val.toString('hex'))
     if (payload.sourceLanguage === 'solidity') {
-      decodedOutput = decodedOutput.map((val, i)=> ieleTranslator.decode(val, payload.funAbi.outputs[i]).result)
-      params = params.map((val, i)=> ieleTranslator.decode(val, payload.funAbi.inputs[i]).result)
+      decodedOutput = decodedOutput.map((val, i) => ieleTranslator.decode(val, payload.funAbi.outputs[i]).result)
+      params = params.map((val, i) => ieleTranslator.decode(val, payload.funAbi.inputs[i]).result)
     }
     decodedOutput = this.formatDecodedOutput(decodedOutput, payload.funAbi.outputs)
     params = this.formatDecodedParams(params, payload.funAbi.inputs)
@@ -160,17 +160,17 @@ class TxListener {
 
   /**
    * @rv: convert list of decoded values to object
-   * @param {object[]} decodedValue 
+   * @param {object[]} decodedValue
    * @param {object[]} typeList
    * @return {{[key:string]:any}}
    */
-  formatDecodedParams(decodedValue, typeList) {
+  formatDecodedParams (decodedValue, typeList) {
     if (!decodedValue || !decodedValue.length) {
       return undefined
     }
     const output = {}
     decodedValue.forEach((val, i) => {
-      if (typeof(val) === 'object') {
+      if (typeof (val) === 'object') {
         val = JSON.stringify(val)
       }
       output[`${typeList[i].type} ${typeList[i].name}`] = val
@@ -180,17 +180,17 @@ class TxListener {
 
   /**
    * @rv: convert list of decoded values to object
-   * @param {object[]} decodedValue 
+   * @param {object[]} decodedValue
    * @param {object[]} typeList
    * @return {{[key:string]:any}}
    */
-  formatDecodedOutput(decodedValue, typeList) {
+  formatDecodedOutput (decodedValue, typeList) {
     if (!decodedValue || !decodedValue.length) {
       return undefined
     }
     const output = {}
     decodedValue.forEach((val, i) => {
-      if (typeof(val) === 'object') {
+      if (typeof (val) === 'object') {
         val = JSON.stringify(val)
       }
       if (typeList && typeList[i] && typeList[i].type) {
@@ -342,6 +342,7 @@ class TxListener {
           // console.log('- this._api.resolveReceipt')
           // console.log('- * receipt, ', receipt)
           if (error) return cb(error)
+          if (!receipt) return cb('Receipt is null. It may just be delayed.')
           var address = receipt.contractAddress
           this._resolvedContracts[address] = contractName
           this._resolveFunction(contractName, contracts, tx, true)
@@ -410,11 +411,11 @@ class TxListener {
         const inputs = (sourceLanguage === 'solidity') ? getFunctionForSolidity(abi, fn).inputs : getFunctionForIELE(abi, fn).inputs
         // console.log('* fn: ', fn)
         // console.log('* inputs: ', inputs)
-        let params 
-        if (sourceLanguage === "solidity") {
-          params = decoded[1].map((val, i)=> ieleTranslator.decode('0x' + val.toString('hex'), inputs[i]).result)
+        let params
+        if (sourceLanguage === 'solidity') {
+          params = decoded[1].map((val, i) => ieleTranslator.decode('0x' + val.toString('hex'), inputs[i]).result)
         } else { // IELE
-          params = decoded[1].map((val)=> '0x' + val.toString('hex'))
+          params = decoded[1].map((val) => '0x' + val.toString('hex'))
         }
         params = this.formatDecodedParams(params, inputs)
 
@@ -454,11 +455,11 @@ class TxListener {
     } else {
       if (isIeleVM) {
         const decoded = RLP.decode('0x' + inputData)
-        let params 
-        if (sourceLanguage === "solidity") {
-          params = decoded[1].map((val, i)=> ieleTranslator.decode('0x' + val.toString('hex'), getConstructorInterface(abi).inputs[i]).result)
+        let params
+        if (sourceLanguage === 'solidity') {
+          params = decoded[1].map((val, i) => ieleTranslator.decode('0x' + val.toString('hex'), getConstructorInterface(abi).inputs[i]).result)
         } else { // IELE
-          params = decoded[1].map((val)=> '0x' + val.toString('hex'))
+          params = decoded[1].map((val) => '0x' + val.toString('hex'))
         }
         params = this.formatDecodedParams(params, getConstructorInterface(abi).inputs)
 
@@ -495,7 +496,7 @@ class TxListener {
       // console.log('- contract: ', contract)
       const isIeleVM = contract.object.vm === 'ielevm'
       // console.log('- isIeleVM: ', isIeleVM)
-      let bytes, resolvedCode 
+      let bytes, resolvedCode
       if (isIeleVM) {
         bytes = contract.object.ielevm.bytecode.object.toLowerCase()
         resolvedCode = codeToResolve.toLowerCase()
@@ -561,7 +562,7 @@ function getFunction (abi, fnName) {
  * @param {object[]} ieleAbi - iele abi
  * @param {string} fnName - iele function name
  */
-function getFunctionForIELE(ieleAbi, fnName) {
+function getFunctionForIELE (ieleAbi, fnName) {
   for (var i = 0; i < ieleAbi.length; i++) {
     if (ieleAbi[i].name === fnName) {
       return ieleAbi[i]
@@ -575,7 +576,7 @@ function getFunctionForIELE(ieleAbi, fnName) {
  * @param {object[]} solidityAbi - solidity abi
  * @param {string} fnName - iele function name
  */
-function getFunctionForSolidity(solidityAbi, fnName) {
+function getFunctionForSolidity (solidityAbi, fnName) {
   for (let i = 0; i < solidityAbi.length; i++) {
     if (ieleTranslator.encodeSolidityFunctionName(solidityAbi[i]) === fnName) {
       return solidityAbi[i]

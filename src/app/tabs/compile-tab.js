@@ -135,12 +135,12 @@ module.exports = class CompileTab {
     })
 
     // @rv
-    executionContext.event.register('contextChanged', async ()=> {
+    executionContext.event.register('contextChanged', async () => {
       self._opts.config.set('compileToIELE', executionContext.isIeleVM())
       let compileToIELE = document.getElementById('compileToIELE')
-      if (!compileToIELE)  {
-        compileToIELE = await new Promise((resolve, reject)=> {
-          setTimeout(()=> {
+      if (!compileToIELE) {
+        compileToIELE = await new Promise((resolve, reject) => {
+          setTimeout(() => {
             return resolve(document.getElementById('compileToIELE'))
           }, 1000)
         })
@@ -234,7 +234,7 @@ module.exports = class CompileTab {
     }
     function insertValue (details, propertyName) {
       var node
-      if (propertyName === 'web3Deploy' || propertyName === 'name' || propertyName === 'Assembly' || 
+      if (propertyName === 'web3Deploy' || propertyName === 'name' || propertyName === 'Assembly' ||
           propertyName === 'IeleAssembly') { // @rv
         node = yo`<pre>${details[propertyName]}</pre>`
       } else if (propertyName === 'abi' || propertyName === 'metadata') {

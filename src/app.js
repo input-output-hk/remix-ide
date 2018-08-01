@@ -1013,29 +1013,32 @@ Please make a backup of your contracts and start using http://remix.ethereum.org
     gtag('event', 'Compiler', {
       event_category: 'Loaded',
       event_label: version
-    });
-  });
+    })
+  })
   rhpEvents.compiler.register('compilationDuration', duration => {
     gtag('event', 'Compilation', {
       event_category: 'Duration',
       value: duration
-    });
-  });
+    })
+  })
   rhpEvents.compiler.register('compilationStarted', () => {
     gtag('event', 'Compilation', {
       event_category: 'Started'
-    });
-  });
+    })
+  })
   rhpEvents.compiler.register('compilationFinished', (success, data, source) => {
     gtag('event', 'Compilation', {
       event_category: 'Finished',
-      event_label: success ? "success" : "failure"
-    });
-  });
+      event_label: success ? 'success' : 'failure'
+    })
+  })
   self._components.righthandpanel.event.register('tabChanged', (name) => {
     gtag('event', 'Right Hand Panel', {
       event_category: 'Change',
       event_label: name
-    });
-  });
+    })
+  })
+
+  // @rv: we set compiler as loaded directly since we don't depend on solc-bin.ethereum.org
+  compiler.onInternalCompilerLoaded()
 }

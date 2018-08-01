@@ -61,10 +61,10 @@ TxRunner.prototype._sendTransaction = function (sendTx, tx, pass, chainId, priva
   try {
     // console.log('@TxRunner.prototype._sendTransaction', args)
     // console.log(sendTx)
-    // @rv: kevm testnet 
+    // @rv: kevm testnet
     if (executionContext.isCustomRPC()) {
       privateKey = Buffer.from(privateKey, 'hex') // convert to Buffer
-      const nonce = executionContext.web3().eth.getTransactionCount(tx.from, "latest")
+      const nonce = executionContext.web3().eth.getTransactionCount(tx.from, 'latest')
       // console.log('@txRunner.js TxRunner.prototype._sendTransaction')
       // console.log('* nonce: ', nonce)
       // console.log('* gas: ', tx.gas)
@@ -89,8 +89,8 @@ TxRunner.prototype._sendTransaction = function (sendTx, tx, pass, chainId, priva
       }
       const ethTx = new EthJSTX(newTx)
       ethTx.sign(privateKey)
-      const serializedTx = ethTx.serialize()  
-      args = ["0x" + serializedTx.toString('hex'), cb]
+      const serializedTx = ethTx.serialize()
+      args = ['0x' + serializedTx.toString('hex'), cb]
       sendTx = executionContext.web3().eth.sendRawTransaction
     }
     sendTx.apply({}, args)
