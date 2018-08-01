@@ -299,11 +299,7 @@ Please make a backup of your contracts and start using http://remix.ethereum.org
   function getCompilerAPIUrl() {
     const context = executionContext.getProvider()
     const customRPC = (self._api.config.get('custom-rpc-list') || []).filter((customRPC)=> customRPC.context === context)[0]
-    if (!customRPC) { // fallback to default url
-      return 'https://iele-testnet.iohkdev.io/remix/api'
-    } else {
-      return customRPC.rpcUrl.replace(/\:\d+\/?$/, '').replace(/\/*$/, '') + `/remix/api`
-    }
+    return customRPC.rpcUrl.replace(/\:\d+\/?$/, '').replace(/\/*$/, '') + `/remix/api`
   }
   var compiler = new Compiler(importFileCb, getCompilerAPIUrl)
   var offsetToLineColumnConverter = new OffsetToLineColumnConverter(compiler.event)
