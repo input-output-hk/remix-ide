@@ -5,19 +5,19 @@
  * "    Revision: 1.0
  * "  Maintainer: Runtime Verification
  * " Last Change: 2018 April
- * 
+ *
  * References:
  *  https://github.com/ajaxorg/ace/wiki/Creating-or-Extending-an-Edit-Mode
  *  https://github.com/ajaxorg/ace/blob/master/tool/tmtheme.js
  */
 var ace = window.ace
 ace.define('ace/mode/iele', ['require', 'exports', 'module', 'ace/lib/oop', 'ace/mode/text_highlight_rules'], function (acequire, exports, module) {
-  var oop = acequire('../lib/oop');
-  var TextHighlightRules = acequire("./text_highlight_rules").TextHighlightRules;
-  var TextMode = acequire("./text").Mode
-  var CstyleBehaviour = acequire("./behaviour/cstyle").CstyleBehaviour
-  var CStyleFoldMode = acequire("./folding/cstyle").FoldMode
-  var MatchingBraceOutdent = acequire("./matching_brace_outdent").MatchingBraceOutdent
+  var oop = acequire('../lib/oop')
+  var TextHighlightRules = acequire('./text_highlight_rules').TextHighlightRules
+  var TextMode = acequire('./text').Mode
+  var CstyleBehaviour = acequire('./behaviour/cstyle').CstyleBehaviour
+  var CStyleFoldMode = acequire('./folding/cstyle').FoldMode
+  var MatchingBraceOutdent = acequire('./matching_brace_outdent').MatchingBraceOutdent
   var IELEHighlightRules = function () {
     var keywordMapper = this.createKeywordMapper({
       'variable.language': 'this',
@@ -33,9 +33,9 @@ ace.define('ace/mode/iele', ['require', 'exports', 'module', 'ace/lib/oop', 'ace
 
     this.$rules = {
       'start': [{
-          token: 'identifier',
-          regex: /[%@][a-zA-Z$\._\-0-9][a-zA-Z$\._\-0-9]*/
-        },
+        token: 'identifier',
+        regex: /[%@][a-zA-Z$\._\-0-9][a-zA-Z$\._\-0-9]*/
+      },
         {
           token: 'identifier',
           regex: /[%@]"[^\"]+"/
@@ -106,10 +106,10 @@ ace.define('ace/mode/iele', ['require', 'exports', 'module', 'ace/lib/oop', 'ace
         }
       ],
       'blockComment': [{
-          token: 'comment',
-          regex: /\*\//,
-          next: 'start'
-        },
+        token: 'comment',
+        regex: /\*\//,
+        next: 'start'
+      },
         {
           defaultToken: 'comment'
         }
@@ -118,7 +118,6 @@ ace.define('ace/mode/iele', ['require', 'exports', 'module', 'ace/lib/oop', 'ace
   }
   oop.inherits(IELEHighlightRules, TextHighlightRules)
 
-
   var Mode = function () {
     this.HighlightRules = IELEHighlightRules
 
@@ -126,7 +125,7 @@ ace.define('ace/mode/iele', ['require', 'exports', 'module', 'ace/lib/oop', 'ace
     this.$behaviour = new CstyleBehaviour()
     this.foldingRules = new CStyleFoldMode()
     this.$id = 'ace/mode/iele'
-  };
+  }
   oop.inherits(Mode, TextMode)
 
   exports.Mode = Mode

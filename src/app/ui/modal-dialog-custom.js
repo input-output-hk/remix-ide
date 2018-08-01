@@ -66,19 +66,19 @@ module.exports = {
    * @param {string} adderss address of account
    * @param {(error, password)=>void} cb callback function
    */
-  unlockAccount: function(address, cb) {
+  unlockAccount: function (address, cb) {
     const passwordEl = yo`<div>
       <input id="unlock-password-input" type="password" name='prompt_text' class="${css['prompt_text']}" placeholder="please enter your password to unlock your account" style="width: 100%;" >
     </div>`
     modal(`Unlock account: ${address}`, passwordEl, {
       label: 'Unlock',
-      fn: ()=> {
+      fn: () => {
         const password = passwordEl.querySelector('#unlock-password-input').value
         return cb(null, password)
       }
     }, {
       label: 'Cancel',
-      fn: ()=> {
+      fn: () => {
         return cb('Unlock cancelled', null)
       }
     })
@@ -87,7 +87,7 @@ module.exports = {
    * @rv: import account
    * @param {(error, {privateKey:string, password:string, keystore:string})=>void} cb
    */
-  importAccount: function(cb) {
+  importAccount: function (cb) {
     const importPanel = yo`<div>
     <div>
       <span>Select Type</span>
@@ -109,15 +109,15 @@ module.exports = {
     </div>
   </div>`
 
-    const select = importPanel.querySelector('#import-type-select') 
-    function selectImportType() {
+    const select = importPanel.querySelector('#import-type-select')
+    function selectImportType () {
       const importType = select.value
       if (importType === 'private-key') {
-        importPanel.querySelector('#private-key-import').style.display = "block"
-        importPanel.querySelector('#json-file-import').style.display = "none"
+        importPanel.querySelector('#private-key-import').style.display = 'block'
+        importPanel.querySelector('#json-file-import').style.display = 'none'
       } else {
-        importPanel.querySelector('#private-key-import').style.display = "none"
-        importPanel.querySelector('#json-file-import').style.display = "block"
+        importPanel.querySelector('#private-key-import').style.display = 'none'
+        importPanel.querySelector('#json-file-import').style.display = 'block'
       }
     }
     select.onchange = selectImportType
@@ -125,18 +125,18 @@ module.exports = {
 
     const jsonFileInput = importPanel.querySelector('#json-file-input')
     let file = null
-    jsonFileInput.onchange = function(event) {
+    jsonFileInput.onchange = function (event) {
       file = event.target.files[0]
     }
 
     modal(`Import account`, importPanel, {
       label: 'Import',
-      fn: ()=> {
+      fn: () => {
         if (select.value === 'private-key') {
           const privateKey = importPanel.querySelector('#private-key-input').value
           const password = importPanel.querySelector('#password-input').value
           return cb(null, {
-            privateKey, 
+            privateKey,
             password
           })
         } else {
@@ -146,7 +146,7 @@ module.exports = {
 
           const password = importPanel.querySelector('#password-input-2').value
           const fileReader = new FileReader()
-          fileReader.onload = function(event) {
+          fileReader.onload = function (event) {
             const keystore = event.target.result
             return cb(null, {
               keystore,
@@ -158,7 +158,7 @@ module.exports = {
       }
     }, {
       label: 'Cancel',
-      fn: ()=> {
+      fn: () => {
         return cb('Import cancelled', {})
       }
     })
@@ -167,7 +167,7 @@ module.exports = {
    * @rv: connect user to Custom RPC
    * @param {(error:string, {endpoint:string, chainId:number, vm:string})=>void} cb
    */
-  connectToCustomRPC: function(cb) {
+  connectToCustomRPC: function (cb) {
     const customRPCPanel = yo`<div>
       <p>Please note that your accounts will be saved in the browser under this mode.</p>
       <p>We will sign your transaction directly in the browser before you send it.</p>
@@ -185,7 +185,7 @@ module.exports = {
     </div>`
     modal(`Custom RPC`, customRPCPanel, {
       'label': 'Connect',
-      fn: ()=> {
+      fn: () => {
         const rpcUrl = customRPCPanel.querySelector('#rpc-url-input').value
         const chainId = parseInt(customRPCPanel.querySelector('#chainId-input').value) || undefined
         const vm = customRPCPanel.querySelector('#vm-type-select').value
@@ -197,7 +197,7 @@ module.exports = {
       }
     }, {
       'label': 'Cancel',
-      fn: ()=> {
+      fn: () => {
         return cb('Connection cancelled', {})
       }
     })
@@ -208,7 +208,7 @@ module.exports = {
    * @param {string} from
    * @param {(error: string, {to?: string, value?: string, dataHex?: string})=>void} cb
    */
-  sendCustomTransaction: function(from, cb) {
+  sendCustomTransaction: function (from, cb) {
     const customTransactionPanel = yo`<div>
       <p>From: ${from}</p>
       <input id="custom-transaction-recipient-address-input" type="text" name='prompt_text' class="${css['prompt_text']}" placeholder="Recipient Address" >
@@ -227,7 +227,7 @@ module.exports = {
     </div>`
     modal('Send Transaction', customTransactionPanel, {
       'label': 'Next',
-      fn: ()=> {
+      fn: () => {
         const to = customTransactionPanel.querySelector('#custom-transaction-recipient-address-input').value
         let value = parseFloat(customTransactionPanel.querySelector('#custom-transaction-amount-input').value.trim() || '0')
         const unit = customTransactionPanel.querySelector('#custom-transaction-unit-select').value
@@ -240,14 +240,14 @@ module.exports = {
           value = value * 1000000000
         } // else wei
         return cb(null, {
-          to, 
+          to,
           value,
           dataHex
         })
       }
     }, {
       'label': 'Cancel',
-      fn: ()=> {
+      fn: () => {
         return cb('Transaction cancelled', {})
       }
     })

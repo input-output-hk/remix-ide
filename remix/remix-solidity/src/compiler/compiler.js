@@ -46,7 +46,7 @@ function Compiler (handleImportCall) {
   })
 
   var internalCompile = function (files, target, missingInputs) {
-    if (target.endsWith('.sol')) { // solidity 
+    if (target.endsWith('.sol')) { // solidity
       gatherImports(files, target, missingInputs, function (error, input) {
         if (error) {
           self.lastCompilationResult = null
@@ -55,7 +55,7 @@ function Compiler (handleImportCall) {
           compileJSON(input, optimize ? 1 : 0)
         }
       })
-    } else { // iele 
+    } else { // iele
       compileIELE(files, target)
     }
   }
@@ -82,7 +82,7 @@ function Compiler (handleImportCall) {
    * Reference:
    * https://solidity.readthedocs.io/en/latest/using-the-compiler.html?highlight=error-types#error-types
    */
-  function parseSolidityErrors(message) {
+  function parseSolidityErrors (message) {
     message = message.trim().replace('Warning: This is a pre-release compiler version, please do not use it in production.', '')
     let end = message.indexOf('\n=====')
     if (end >= 0) {
@@ -105,7 +105,7 @@ function Compiler (handleImportCall) {
       }
       messages.push(t.join('\n').trim())
     }
-    return messages.map((message)=> {
+    return messages.map((message) => {
       const errorMatch = message.match(/^[^:]*:[0-9]*:(?:[0-9]*:)?\s+([^:]+)\:\s+/)
       let isWarning = true
       if (errorMatch && errorMatch[1]) {
@@ -129,11 +129,11 @@ function Compiler (handleImportCall) {
    * @param {string} optionalFilePath - which file this iele code belongs to. {optional}
    * @return {{[key:string]:{[key:string]:string}}}
    */
-  function parseIELECode(ieleCode, optionalFilePath) {
+  function parseIELECode (ieleCode, optionalFilePath) {
     ieleCode = ieleCode.replace(/^IELE\s+assembly\s*\:\s*$/mgi, '')
-    const sections = ieleCode.split(/^=+\s+([^=]+?)\s+=+\s/m).filter((x)=> x.trim().length)
+    const sections = ieleCode.split(/^=+\s+([^=]+?)\s+=+\s/m).filter((x) => x.trim().length)
     const output = {}
-    function helper(ieleCode) {
+    function helper (ieleCode) {
       const lines = ieleCode.split('\n')
       for (let i = lines.length - 1; i >= 0; i--) {
         const line = lines[i]
@@ -154,7 +154,7 @@ function Compiler (handleImportCall) {
         }
       }
     }
-    sections.forEach((ieleCode)=> helper(ieleCode))
+    sections.forEach((ieleCode) => helper(ieleCode))
     return output
   }
 
@@ -162,7 +162,7 @@ function Compiler (handleImportCall) {
    * @param {string} code
    * @return {{[key:string]:{[key:string]:string}}}
    */
-  function parseSolidityCodeAbi(code) {
+  function parseSolidityCodeAbi (code) {
     const lines = code.split('\n')
     const output = {}
     for (let i = 0; i < lines.length; i++) {
@@ -192,7 +192,7 @@ function Compiler (handleImportCall) {
    * @param {string} optionalFilePath - which file this iele code belongs to. {optional}
    * @return {{errors: any[], contracts: {[key:string]:{[key:string]: {assembly: string, bytecode: string, abi: object}}}}}
    */
-  async function compileIELECode(ieleCode, optionalFilePath) {
+  async function compileIELECode (ieleCode, optionalFilePath) {
     const parsed = parseIELECode(ieleCode, optionalFilePath)
     const contracts = {}
     let errors = []
@@ -233,7 +233,7 @@ function Compiler (handleImportCall) {
         contracts[filePath][contractName] = {
           assembly: ieleCode,
           bytecode: bytecode,
-          abi: ieleAbi,
+          abi: ieleAbi
         }
       }
     }
@@ -243,14 +243,14 @@ function Compiler (handleImportCall) {
     }
   }
 
-  async function compileSolidityToIELE(source, cb) {
+  async function compileSolidityToIELE (source, cb) {
     const sources = source.sources
     const target = source.target
 
-    async function helper(sources, target) {
+    async function helper (sources, target) {
       // console.log('@compileSolidityToIELE', result, source)
       try {
-        const params = [["ast","abi"], target, {}]
+        const params = [['ast', 'abi'], target, {}]
         for (const filePath in sources) {
           params[2][filePath] = sources[filePath].content
         }
@@ -260,7 +260,7 @@ function Compiler (handleImportCall) {
           method: 'POST',
           mode: 'cors',
           headers: {
-            'content-type': 'application/json',
+            'content-type': 'application/json'
           },
           body: JSON.stringify({
             method: 'sol2iele_asm',
@@ -272,7 +272,7 @@ function Compiler (handleImportCall) {
         if (json1['error']) {
           throw json1['error']['data'].toString()
         }
-  
+
         let code = json1['result']
         const index = code.indexOf('\n=====')         // TODO: multiple .sol files will produce multiple ====
         code = code.slice(index, code.length)
@@ -306,9 +306,9 @@ function Compiler (handleImportCall) {
         if (json2['error']) {
           throw json2['error']['data'].toString()
         }
-        const result = JSON.parse(json2["result"].trim().split("\n").pop())
+        const result = JSON.parse(json2['result'].trim().split('\n').pop())
 
-        // update structure of `result` 
+        // update structure of `result`
         const contracts = {}
         for (const slug in result.contracts) {
           const i = slug.lastIndexOf(':')
@@ -318,13 +318,13 @@ function Compiler (handleImportCall) {
             contracts[filePath] = {}
           }
           contracts[filePath][contractName] = result.contracts[slug]
-          contracts[filePath][contractName]["abi"] = JSON.parse(contracts[filePath][contractName]["abi"])
+          contracts[filePath][contractName]['abi'] = JSON.parse(contracts[filePath][contractName]['abi'])
         }
         result.contracts = contracts
         for (const filePath in result.sources) {
-          const AST = result.sources[filePath]["AST"]
-          result.sources[filePath]["legacyAST"] = AST
-          delete(result.sources[filePath]["AST"])
+          const AST = result.sources[filePath]['AST']
+          result.sources[filePath]['legacyAST'] = AST
+          delete (result.sources[filePath]['AST'])
         }
 
         // Compile IELE assembly
@@ -351,7 +351,7 @@ function Compiler (handleImportCall) {
                 abi,
                 ieleAssembly: assembly
               },
-              abi: result.contracts[filePath][contractName]["abi"]
+              abi: result.contracts[filePath][contractName]['abi']
             }
           }
         }
@@ -360,7 +360,7 @@ function Compiler (handleImportCall) {
           result['errors'] = errors
         }
         return result
-      } catch(error) {
+      } catch (error) {
         throw error
       }
     }
@@ -368,9 +368,9 @@ function Compiler (handleImportCall) {
     try {
       const result = await helper(sources, target)
       return cb(result)
-    } catch(error) {
-      if (typeof(error) === 'string' ||
-          (error.stack && error.message && typeof(error.stack) === 'string' && typeof(error.message) === 'string') // Exception
+    } catch (error) {
+      if (typeof (error) === 'string' ||
+          (error.stack && error.message && typeof (error.stack) === 'string' && typeof (error.message) === 'string') // Exception
       ) {
         const message = error.toString()
         return cb({
@@ -387,7 +387,7 @@ function Compiler (handleImportCall) {
     }
   }
 
-  function parseIeleErrors(message) {
+  function parseIeleErrors (message) {
     if (isNaN('0x' + message)) {
       let start = 0
       let end = 0
@@ -396,14 +396,14 @@ function Compiler (handleImportCall) {
         component: 'general',
         formattedMessage: message,
         severity: 'error',
-        message: message,
+        message: message
       }]
     } else {
       return undefined
     }
   }
 
-  async function compileIELE(sources, target) {
+  async function compileIELE (sources, target) {
     try {
       const r = await compileIELECode(sources[target].content, target)
       const result = {contracts: {}, errors: r.errors}
@@ -435,9 +435,9 @@ function Compiler (handleImportCall) {
         }
       }
       return compilationFinished(result, undefined, {sources, target})
-    } catch(error) {
-      if (typeof(error) === 'string' ||
-          (error.stack && error.message && typeof(error.stack) === 'string' && typeof(error.message) === 'string') // Exception
+    } catch (error) {
+      if (typeof (error) === 'string' ||
+          (error.stack && error.message && typeof (error.stack) === 'string' && typeof (error.message) === 'string') // Exception
       ) {
         const message = error.toString()
         return compilationFinished({
@@ -460,7 +460,7 @@ function Compiler (handleImportCall) {
    * @param {string} contractName
    * @return {object[]}
    */
-  function retrieveIELEAbi(ieleCode, contractName) {
+  function retrieveIELEAbi (ieleCode, contractName) {
     // TODO: check if contractName is empty
     if (!contractName || !ieleCode) {
       return []
@@ -503,11 +503,11 @@ function Compiler (handleImportCall) {
       if (!public_ && functionName !== 'init') { // ignore private functions excluding @init
         continue
       }
-      const parameters = match[3].split(',').map((x)=> x.trim()).filter(x=>x)
+      const parameters = match[3].split(',').map((x) => x.trim()).filter(x => x)
       const type = (functionName === 'init') ? 'constructor' : 'function'
       abiArray.push({
         name: functionName,
-        inputs: parameters.map((parameter)=> {
+        inputs: parameters.map((parameter) => {
           return {
             name: parameter,
             type: 'int'
@@ -523,7 +523,7 @@ function Compiler (handleImportCall) {
     if (worker === null) {
       compileJSON = function (source, optimize, cb) {
         if (compileToIELE) {
-          return compileSolidityToIELE(source, (result)=> {
+          return compileSolidityToIELE(source, (result) => {
             return compilationFinished(result, [], source)
           })
         }
@@ -683,8 +683,8 @@ function Compiler (handleImportCall) {
     newScript.type = 'text/javascript'
     newScript.src = url
     document.getElementsByTagName('head')[0].appendChild(newScript)
-    newScript.onload = function() { // @rv: sol.js loaded
-      onInternalCompilerLoaded();
+    newScript.onload = function () { // @rv: sol.js loaded
+      onInternalCompilerLoaded()
     }
   }
 
@@ -743,7 +743,7 @@ function Compiler (handleImportCall) {
 
     for (const fileName in files) {
       const lines = files[fileName].content.split('\n')
-      lines.forEach((line, index)=> {
+      lines.forEach((line, index) => {
         const match = line.match(/^\s*import\s*[\'\"]([^\'\"]+)[\'\"]\s*;/)
         if (match) {
           let importFilePath = match[1]
@@ -755,13 +755,13 @@ function Compiler (handleImportCall) {
               importFilePath = importFilePath.slice(2)
             }
           }
-  
+
           // FIXME: should be using includes or sets, but there's also browser compatibility..
           if (importHints.indexOf(importFilePath) === -1) {
             importHints.push(importFilePath)
           }
         }
-      }) 
+      })
     }
 
     while (importHints.length > 0) {

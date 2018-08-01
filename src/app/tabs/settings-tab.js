@@ -272,8 +272,8 @@ module.exports = class SettingsTab {
     }
     */
    // @rv: we don't use worker
-   self._opts.compiler.loadVersion(false, url) 
-   self.setVersionText('(loading)')
+    self._opts.compiler.loadVersion(false, url)
+    self.setVersionText('(loading)')
   }
   fetchAllVersion (callback) {
     var self = this

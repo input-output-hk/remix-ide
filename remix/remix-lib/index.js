@@ -61,7 +61,7 @@ function modules () {
       txListener: txListener,
       txRunner: txRunner,
       typeConversion: typeConversion,
-      ieleTranslator: ieleTranslator,
+      ieleTranslator: ieleTranslator
     }
   }
 }

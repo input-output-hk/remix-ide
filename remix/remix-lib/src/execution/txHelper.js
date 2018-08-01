@@ -14,7 +14,7 @@ module.exports = {
   /**
    * @rv: Modify encodeParams to support iele.
    * @param {{name: string, inputs: {name: string, type: string}[]}} funABI
-   * @param {any[]} args 
+   * @param {any[]} args
    * @param {string} sourceLanguage
    * @param {string} vm
    * @return {string[]|string} if isIele, returns string[], else returns string
@@ -27,8 +27,8 @@ module.exports = {
     // console.log('* vm: ', vm)
     if (vm === 'ielevm') {
       if (sourceLanguage === 'iele') {
-        return args.map((x)=> {
-          if (typeof(x) === 'number') {
+        return args.map((x) => {
+          if (typeof (x) === 'number') {
             x = x.toString(10)
           }
 
@@ -45,8 +45,8 @@ module.exports = {
           }
         })
       } else { // solidity
-        return args.map((x, i)=> {
-          return ieleTranslator.encode(x, funABI.inputs[i]) 
+        return args.map((x, i) => {
+          return ieleTranslator.encode(x, funABI.inputs[i])
         })
       }
     } else { // evm && solidity
@@ -60,7 +60,7 @@ module.exports = {
           }
         }
       }
-  
+
       // NOTE: the caller will concatenate the bytecode and this
       //       it could be done here too for consistency
       var abiCoder = new ethers.utils.AbiCoder()
@@ -116,8 +116,8 @@ module.exports = {
     return funABI
   },
 
-  getConstructorInterfaceForIELE: function(abi) {
-    const constructorAbi = abi.filter((x)=> x.type === 'constructor')[0]
+  getConstructorInterfaceForIELE: function (abi) {
+    const constructorAbi = abi.filter((x) => x.type === 'constructor')[0]
     if (!constructorAbi) {
       return {
         name: 'init',
