@@ -524,11 +524,13 @@ function settings (container, appAPI, appEvents, opts) {
       <div class=${css.environment}>
         ${net}
         <select id="selectExEnvOptions" onchange=${updateNetwork} class="${css.select}">
-          <option 
-            title="IELE Testnet"
-            value="custom-rpc-iele-testnet" name="executionContext"
-            selected> IELE Testnet
-          </option>
+          ${(opts.config.get('custom-rpc-list') || []).map((customRPC)=> {
+            return yo`<option
+              title="${customRPC.name || "Custom"}"
+              value="${customRPC.context}" name="executionContext"
+              selected> ${customRPC.name || customRPC.rpcUrl}
+            </option>`
+          })}
         </select>
         <a href="https://github.com/ethereum/EIPs/blob/master/EIPS/eip-155.md" target="_blank"><i class="${css.icon} fa fa-info"></i></a>
         <i id="remove-custom-rpc-icon" class="${css.icon} fa fa-times" title="Remove selected Custom RPC" style="display:none;" onclick=${removeCustomRPC}></i>
@@ -559,7 +561,7 @@ function settings (container, appAPI, appEvents, opts) {
         <div class="${css.rvButton}" style="margin-bottom:0;margin-left:0;" onclick=${exportPrivateKey}>Export private key</div>
         <div class="${css.rvButton}" style="margin-bottom:0;" onclick=${removeAccount}>Remove account</div>
         <div class="${css.rvButton}" style="margin-bottom:0;" onclick=${sendCustomTransaction}>Send transaction</div>
-      </div>  
+      </div>
       <div class="${css.crow}">
         <div class="${css.rvButton}" style="margin-left:0;" onclick=${importAccount}>Import account</div>
         <div class="${css.rvButton}" onclick=${newAccount}>Create account</div>
@@ -639,15 +641,13 @@ function settings (container, appAPI, appEvents, opts) {
     }
     const context = executionContext.getProvider()
     let targetUrl = '',
-      txLink = ''
-    if (context === 'custom-rpc-kevm-testnet') {
-      targetUrl = `https://kevm-testnet.iohkdev.io:8099/faucet?address=${address}`
-      txLink = `https://kevm-testnet.iohkdev.io/transaction/`
-    } else if (context === 'custom-rpc-iele-testnet') {
-      targetUrl = `https://staging.iele.dev-mantis.iohkdev.io:8099/faucet?address=${address}`
-      txLink = `https://staging.iele.dev-mantis.iohkdev.io/transaction/`
+        txLink = ''
+    const customRPC = (opts.config.get('custom-rpc-list') || []).filter((customRPC)=> customRPC.context === context)[0]
+    if (!customRPC) {
+      return addTooltip('No faucet found for ' + context)	
     } else {
-      return addTooltip('No faucet found for ' + context)
+      targetUrl = customRPC.rpcUrl.replace(/\:\d+\/?$/, '').replace(/\/*$/, '') + `:8099/faucet?address=${address}`
+      txLink = customRPC.rpcUrl.replace(/\:\d+\/?$/, '').replace(/\/*$/, '') + `/transaction/`
     }
     appAPI.logMessage(`request from Faucet pending...`)
     requestFundsIcon.classList.add(css.spinningIcon)
@@ -797,23 +797,14 @@ function settings (container, appAPI, appEvents, opts) {
       }
     }
 
-    /*
-    addIfNotExists({
-      name: 'KEVM Testnet',
-      context: 'custom-rpc-kevm-testnet',
-      chainId: undefined,
-      rpcUrl: 'https://kevm-testnet.iohkdev.io:8546/',
-      vm: 'evm'
-    })
-    */
-
     addIfNotExists({
       name: 'IELE Testnet',
       context: 'custom-rpc-iele-testnet',
       chainId: undefined,
-      rpcUrl: 'https://staging.iele.dev-mantis.iohkdev.io:8546/',
+      rpcUrl: (location.protocol + '//' + location.hostname + ':8546/'),
       vm: 'ielevm'
     })
+    // You can click `Connect to Custom RPC` button to connect to custom rpc node to do your development testing.
 
     // TODO: remove the `filter` below in the future when IELE testnet launches
     opts.config.set('custom-rpc-list', customRPCList.filter((x) => x.context !== 'custom-rpc-iele-testnet-dev'))
@@ -830,10 +821,10 @@ function toggleRVElements () {
     const context = executionContext.getProvider()
     if (context === 'custom-rpc-kevm-testnet' ||
         context === 'custom-rpc-iele-testnet') {
-      $('#request-from-faucet-btn').show()
+      // $('#request-from-faucet-btn').show()
       $('#remove-custom-rpc-icon').hide()
     } else {
-      $('#request-from-faucet-btn').hide()
+      // $('#request-from-faucet-btn').hide()
       $('#remove-custom-rpc-icon').show()
     }
   } else {

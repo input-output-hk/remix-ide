@@ -144,6 +144,8 @@ function ExecutionContext () {
     if (this.isVM()) {
       callback(null, { id: '-', name: 'VM' })
     } else {
+      const customRPCList = this.config.get('custom-rpc-list') || []
+      const customRPC = customRPCList.filter((x)=> x.context === executionContext)[0]
       this.web3().version.getNetwork((err, id) => {
         var name = null
         if (err) name = 'Unknown'
@@ -153,8 +155,13 @@ function ExecutionContext () {
         else if (id === '3') name = 'Ropsten'
         else if (id === '4') name = 'Rinkeby'
         else if (id === '42') name = 'Kovan'
-        else if (id === '13137357' || id === '1234') name = 'Goguen' // @rv: add Goguen
+        else if (id === '13137357') name = 'KEVM' // @rv: KEVM testnet
+        else if (id === '133753763') name = 'IELE' // @rv: IELE testnet
         else name = 'Custom'
+
+        if (customRPC) { // @rv: Update transactionDetailsLinksRV
+          transactionDetailsLinksRV[id] = customRPC.rpcUrl.replace(/\:\d+\/?$/, '').replace(/\/*$/, '') + `/transaction/`
+        }
 
         if (id === '1') {
           this.web3().eth.getBlock(0, (error, block) => {
@@ -292,8 +299,6 @@ var transactionDetailsLinks = {
 }
 
 var transactionDetailsLinksRV = {
-  '13137357': 'https://kevm-testnet.iohkdev.io/transaction/',
-  '1234': 'https://staging.iele.dev-mantis.iohkdev.io/transaction/'
 }
 
 module.exports = new ExecutionContext()

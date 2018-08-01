@@ -22,7 +22,9 @@ Install **npm** and **node.js** (Recommended to use `LTS` version) (see https://
 git clone https://github.com/ethereum/remix-ide.git
 cd remix-ide
 npm install
-npm run linkremixcore && npm run linkremixlib && npm run linkremixsolidity
+npm run linkremixcore
+npm run linkremixlib
+npm run linkremixsolidity
 npm start
 ```
 

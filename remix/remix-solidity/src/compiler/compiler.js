@@ -11,11 +11,10 @@ var EventManager = remixLib.EventManager
 
 var txHelper = require('./txHelper')
 
-const COMPILER_API_GATEWAY = 'https://staging.iele.dev-mantis.iohkdev.io/remix/api'
 /*
   trigger compilationFinished, compilerLoaded, compilationStarted, compilationDuration
 */
-function Compiler (handleImportCall) {
+function Compiler (handleImportCall, getCompilerAPIUrl) {
   var self = this
   this.event = new EventManager()
 
@@ -201,7 +200,7 @@ function Compiler (handleImportCall) {
       const ieleFilePath = filePath.replace(/\.sol$/, '.iele')
       for (const contractName in parsed[filePath]) {
         const ieleCode = parsed[filePath][contractName]
-        const response = await window['fetch'](COMPILER_API_GATEWAY, {
+        const response = await window['fetch'](getCompilerAPIUrl(), {
           method: 'POST',
           mode: 'cors',
           headers: {
@@ -256,7 +255,7 @@ function Compiler (handleImportCall) {
         }
 
         // get IELE assembly
-        const response1 = await window['fetch'](COMPILER_API_GATEWAY, {
+        const response1 = await window['fetch'](getCompilerAPIUrl(), {
           method: 'POST',
           mode: 'cors',
           headers: {
@@ -290,7 +289,7 @@ function Compiler (handleImportCall) {
         }
 
         // Get Solidity ABI and AST
-        const response2 = await window['fetch'](COMPILER_API_GATEWAY, {
+        const response2 = await window['fetch'](getCompilerAPIUrl(), {
           method: 'POST',
           mode: 'cors',
           headers: {

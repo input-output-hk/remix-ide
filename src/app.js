@@ -295,7 +295,13 @@ Please make a backup of your contracts and start using http://remix.ethereum.org
   }
 
   // ----------------- Compiler -----------------
-  var compiler = new Compiler(importFileCb)
+  // @rv: get absolute /remix/api url for sol2iele compiler services.
+  function getCompilerAPIUrl() {
+    const context = executionContext.getProvider()
+    const customRPC = (self._api.config.get('custom-rpc-list') || []).filter((customRPC)=> customRPC.context === context)[0]
+    return customRPC.rpcUrl.replace(/\:\d+\/?$/, '').replace(/\/*$/, '') + `/remix/api`
+  }
+  var compiler = new Compiler(importFileCb, getCompilerAPIUrl)
   var offsetToLineColumnConverter = new OffsetToLineColumnConverter(compiler.event)
 
   // ----------------- UniversalDApp -----------------
