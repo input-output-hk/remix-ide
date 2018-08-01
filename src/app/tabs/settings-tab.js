@@ -52,8 +52,6 @@ module.exports = class SettingsTab {
       if (self._view.versionSelector) self._updateVersionSelector()
     })
     */
-   // @rv: we set compiler as loaded directly
-   self._opts.compiler.onInternalCompilerLoaded()
   }
   render () {
     const self = this

@@ -244,7 +244,6 @@ function Compiler (handleImportCall) {
   }
 
   async function compileSolidityToIELE(source, cb) {
-    console.log('@compileSolidityToIELE')
     const sources = source.sources
     const target = source.target
 
@@ -255,8 +254,43 @@ function Compiler (handleImportCall) {
         for (const filePath in sources) {
           params[2][filePath] = sources[filePath].content
         }
-        // Get Solidity ABI and AST
+
+        // get IELE assembly
         const response1 = await window['fetch'](COMPILER_API_GATEWAY, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({
+            method: 'sol2iele_asm',
+            params: params.slice(1),
+            jsonrpc: '2.0'
+          })
+        })
+        const json1 = await response1.json()
+        if (json1['error']) {
+          throw json1['error']['data'].toString()
+        }
+  
+        let code = json1['result']
+        const index = code.indexOf('\n=====')         // TODO: multiple .sol files will produce multiple ====
+        code = code.slice(index, code.length)
+        const ieleCode = code.trim()
+        let errors = parseSolidityErrors(json1['result'])
+
+        if (!ieleCode) { // error. eg ballot.sol
+          if (errors.length) {
+            throw {
+              errors: errors
+            }
+          } else {
+            throw json1['result']
+          }
+        }
+
+        // Get Solidity ABI and AST
+        const response2 = await window['fetch'](COMPILER_API_GATEWAY, {
           method: 'POST',
           mode: 'cors',
           headers: {
@@ -268,12 +302,11 @@ function Compiler (handleImportCall) {
             jsonrpc: '2.0'
           })
         })
-        const json1 = await response1.json()
-        if (json1['error']) {
-          throw json1['error']['data'].toString()
+        const json2 = await response2.json()
+        if (json2['error']) {
+          throw json2['error']['data'].toString()
         }
-        const result = JSON.parse(json1["result"].trim().split("\n").pop())
-        console.log('* result 1:', Object.assign({}, result))
+        const result = JSON.parse(json2["result"].trim().split("\n").pop())
 
         // update structure of `result` 
         const contracts = {}
@@ -292,41 +325,6 @@ function Compiler (handleImportCall) {
           const AST = result.sources[filePath]["AST"]
           result.sources[filePath]["legacyAST"] = AST
           delete(result.sources[filePath]["AST"])
-        }
-        console.log('* result 2: ', result)
-
-        // get IELE assembly
-        const response2 = await window['fetch'](COMPILER_API_GATEWAY, {
-          method: 'POST',
-          mode: 'cors',
-          headers: {
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify({
-            method: 'sol2iele_asm',
-            params: params.slice(1),
-            jsonrpc: '2.0'
-          })
-        })
-        const json2 = await response2.json()
-        if (json2['error']) {
-          throw json2['error']['data'].toString()
-        }
-  
-        let code = json2['result']
-        const index = code.indexOf('\n=====')         // TODO: multiple .sol files will produce multiple ====
-        code = code.slice(index, code.length)
-        const ieleCode = code.trim()
-        let errors = parseSolidityErrors(json2['result'])
-
-        if (!ieleCode) { // error. eg ballot.sol
-          if (errors.length) {
-            throw {
-              errors: errors
-            }
-          } else {
-            throw json2['result']
-          }
         }
 
         // Compile IELE assembly
@@ -371,7 +369,6 @@ function Compiler (handleImportCall) {
       const result = await helper(sources, target)
       return cb(result)
     } catch(error) {
-      console.log(error)
       if (typeof(error) === 'string' ||
           (error.stack && error.message && typeof(error.stack) === 'string' && typeof(error.message) === 'string') // Exception
       ) {
@@ -523,12 +520,10 @@ function Compiler (handleImportCall) {
   }
 
   function onInternalCompilerLoaded () {
-    console.log("@onInternalCompilerLoaded: ", worker)
     if (worker === null) {
       compileJSON = function (source, optimize, cb) {
         if (compileToIELE) {
           return compileSolidityToIELE(source, (result)=> {
-            console.log('Compiled result: ', result)
             return compilationFinished(result, [], source)
           })
         }
@@ -665,7 +660,6 @@ function Compiler (handleImportCall) {
 
   // TODO: needs to be changed to be more node friendly
   this.loadVersion = function (usingWorker, url) {
-    console.log('@loadVersion')
     self.event.trigger('loadingCompiler', [url, usingWorker])
 
     if (usingWorker) {
