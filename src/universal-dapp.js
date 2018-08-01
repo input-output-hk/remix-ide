@@ -20,7 +20,7 @@ var modalDialog = require('./app/ui/modaldialog')
 var typeConversion = remixLib.execution.typeConversion
 var confirmDialog = require('./app/execution/confirmDialog')
 
-var keythereum = require("keythereum")
+var keythereum = require('keythereum')
 var RLP = require('rlp')
 
 // @rv: hack to fix empty password bug.
@@ -133,7 +133,7 @@ UniversalDApp.prototype.getAccounts = function (cb) {
       executionContext.web3().personal.getListAccounts(cb)
     } else if (executionContext.isCustomRPC()) { // @rv: kevm testnet, load accounts from `rv-accounts`
       const keystores = this._api.config.get('rv-accounts') || []
-      const accounts = keystores.map((x)=> '0x' + x.address).filter(x=>x)
+      const accounts = keystores.map((x) => '0x' + x.address).filter(x => x)
       cb(null, accounts)
     } else {
       executionContext.web3().eth.getAccounts(cb)
@@ -197,7 +197,7 @@ UniversalDApp.prototype.call = function (isUserAction, args, value, lookupOnly, 
   }
   const contract = {
     sourceLanguage: args.sourceLanguage,
-    vm: isIeleVM ? 'ielevm' : 'evm',
+    vm: isIeleVM ? 'ielevm' : 'evm'
   }
   // TODO: @rv: support IELE
   txFormat.buildData(args.contractName, contract, self.contracts, false, args.funABI, value, (error, data) => {
@@ -221,16 +221,16 @@ UniversalDApp.prototype.call = function (isUserAction, args, value, lookupOnly, 
           }
           if (lookupOnly) {
             if (isIeleVM) {
-              const returnValue = RLP.decode(txResult.result).map(x=> '0x'+x.toString('hex'))
+              const returnValue = RLP.decode(txResult.result).map(x => '0x' + x.toString('hex'))
               // console.log('@universal-dapp.js UniversalDApp.prototype.call => returnValue: ', returnValue)
               if (args.sourceLanguage === 'solidity') { // solidity language
                 // decode results for solidity
-                const ieleTranslator = remixLib.execution.ieleTranslator 
-                const results = returnValue.map((val, i)=> ieleTranslator.decode(val, args.funABI.outputs[i]).result)
+                const ieleTranslator = remixLib.execution.ieleTranslator
+                const results = returnValue.map((val, i) => ieleTranslator.decode(val, args.funABI.outputs[i]).result)
                 const resultElement = document.createElement('ul')
-                results.forEach((result, i)=> {
+                results.forEach((result, i) => {
                   const liElement = document.createElement('li')
-                  if (typeof(result) === 'object') {
+                  if (typeof (result) === 'object') {
                     result = JSON.stringify(result)
                   }
                   liElement.innerText = `${i}: ${args.funABI.outputs[i].type}: ${args.funABI.outputs[i].name} ${result}`
@@ -242,7 +242,7 @@ UniversalDApp.prototype.call = function (isUserAction, args, value, lookupOnly, 
                 return outputCb(resultElement)
               } else { // iele language
                 const resultElement = document.createElement('ul')
-                returnValue.forEach((result, i)=> {
+                returnValue.forEach((result, i) => {
                   const liElement = document.createElement('li')
                   liElement.innerText = result
                   liElement.style.listStyle = 'none'
@@ -369,8 +369,8 @@ UniversalDApp.prototype.runTx = function (args, cb) {
       if (!address) {
         return next('No accounts available')
       }
-      function _getPrivateKey(keystore, password) {
-        keythereum.recover(password, keystore, (privateKey)=> {
+      function _getPrivateKey (keystore, password) {
+        keythereum.recover(password, keystore, (privateKey) => {
           privateKey = privateKey.toString('hex')
           if (isNaN('0x' + privateKey)) { // Invalid privateKey
             const error = privateKey
@@ -385,13 +385,13 @@ UniversalDApp.prototype.runTx = function (args, cb) {
       if (!args.useCall &&   // not a call function
           (executionContext.isCustomRPC())) {
         const accounts = self._api.config.get('rv-accounts')
-        const keystore = accounts.filter((x)=> x.address === address.replace(/^0x/, ''))[0]
+        const keystore = accounts.filter((x) => x.address === address.replace(/^0x/, ''))[0]
         if (!keystore) {
           return next('Account ' + address + ' not found')
         }
         const password = executionContext.getPasswordFromAddress(address)
-        if (typeof(password) === 'undefined') {
-          modalCustom.unlockAccount(address, (error, password)=> {
+        if (typeof (password) === 'undefined') {
+          modalCustom.unlockAccount(address, (error, password) => {
             if (error) {
               return next(error)
             } else {
@@ -420,7 +420,7 @@ UniversalDApp.prototype.runTx = function (args, cb) {
       if (executionContext.isCustomRPC()) {
         const context = executionContext.getProvider()
         const customRPCList = self._api.config.get('custom-rpc-list')
-        const customRPC = customRPCList.filter((x)=> x && x.context === context)[0]
+        const customRPC = customRPCList.filter((x) => x && x.context === context)[0]
         if (customRPC) {
           tx.chainId = customRPC.chainId
         }
@@ -525,22 +525,22 @@ UniversalDApp.prototype.runTx = function (args, cb) {
 
 /**
  * @rv: remove account
- * @param {string} address 
- * @param {(error)=>void} cb 
+ * @param {string} address
+ * @param {(error)=>void} cb
  */
-UniversalDApp.prototype.removeAccount = function(address, cb) {
+UniversalDApp.prototype.removeAccount = function (address, cb) {
   const accounts = this._api.config.get('rv-accounts') || []
-  this._api.config.set('rv-accounts', accounts.filter((x)=> typeof(x) === 'object' && x.address !== address.replace(/^0x/, ''))) // remove address from accounts
+  this._api.config.set('rv-accounts', accounts.filter((x) => typeof (x) === 'object' && x.address !== address.replace(/^0x/, ''))) // remove address from accounts
   return cb(null)
 }
 
 /**
  * @rv: send custom transaction
- * @param {string} address 
+ * @param {string} address
  * @param {(error)=>void} cb
  */
-UniversalDApp.prototype.sendCustomTransaction = function(address, cb) {
-  modalCustom.sendCustomTransaction(address, (error, {to, value, dataHex})=> {
+UniversalDApp.prototype.sendCustomTransaction = function (address, cb) {
+  modalCustom.sendCustomTransaction(address, (error, {to, value, dataHex}) => {
     if (error) {
       return cb(error)
     }
@@ -559,12 +559,12 @@ UniversalDApp.prototype.sendCustomTransaction = function(address, cb) {
       dataHex = '0x' + dataHex
     }
     if (executionContext.isIeleVM() && (!dataHex || parseInt(dataHex) === 0)) {
-      dataHex = RLP.encode(["deposit", []]).toString('hex')
+      dataHex = RLP.encode(['deposit', []]).toString('hex')
     }
 
     const from = address
     this._api.logMessage(`transact from ${from} to ${to} pending...`)
-    this.runTx({from, to, value, data: {dataHex}}, (error, hash)=> {
+    this.runTx({from, to, value, data: {dataHex}}, (error, hash) => {
       if (error) {
         return cb(error)
       }
@@ -574,34 +574,34 @@ UniversalDApp.prototype.sendCustomTransaction = function(address, cb) {
 
 /**
  * @rv: Export private key
- * @param {string} address 
- * @param {(error:string)=>void} cb 
+ * @param {string} address
+ * @param {(error:string)=>void} cb
  */
-UniversalDApp.prototype.exportPrivateKey = function(address, cb) {
-  const _export = (password)=> {
+UniversalDApp.prototype.exportPrivateKey = function (address, cb) {
+  const _export = (password) => {
     const accounts = this._api.config.get('rv-accounts')
-    const keystore = accounts.filter((x)=> x.address === address.replace(/^0x/, ''))[0]
+    const keystore = accounts.filter((x) => x.address === address.replace(/^0x/, ''))[0]
     if (!keystore) {
       return cb('Keystore not found', null)
     } else {
       const crypto = keystore.crypto
       try {
-        keythereum.recover(password, keystore, (privateKey)=> { // TODO: I think I should submit a pull request to `keythereum`. The design of this callback function is really bad.
-          privateKey = privateKey.toString('hex') 
-          if (isNaN('0x' + privateKey)) { // Invalid privateKey  
+        keythereum.recover(password, keystore, (privateKey) => { // TODO: I think I should submit a pull request to `keythereum`. The design of this callback function is really bad.
+          privateKey = privateKey.toString('hex')
+          if (isNaN('0x' + privateKey)) { // Invalid privateKey
             const error = privateKey
             return cb(error)
           }
-          const element = document.createElement('a');
-          element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(privateKey));
-          element.setAttribute('download', `privateKey_${address}_${(new Date())}`);      
-          element.style.display = 'none';
-          document.body.appendChild(element);
-          element.click();
-          document.body.removeChild(element);
+          const element = document.createElement('a')
+          element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(privateKey))
+          element.setAttribute('download', `privateKey_${address}_${(new Date())}`)
+          element.style.display = 'none'
+          document.body.appendChild(element)
+          element.click()
+          document.body.removeChild(element)
           return cb(false)
         })
-      } catch(error) { // Failed to recover private key from the combination of keystore and password
+      } catch (error) { // Failed to recover private key from the combination of keystore and password
         return cb(error, null)
       }
     }
@@ -609,13 +609,13 @@ UniversalDApp.prototype.exportPrivateKey = function(address, cb) {
 
   // const password = executionContext.getPasswordFromAddress(address)
   // if (typeof(password) === 'undefined') { // needs to unlock account
-    modalCustom.unlockAccount(address, (error, password)=> { // force to enter password to unlock the account for export.
-      if (error) {
-        return cb(error)
-      } else {
-        return _export(password)
-      }
-    })
+  modalCustom.unlockAccount(address, (error, password) => { // force to enter password to unlock the account for export.
+    if (error) {
+      return cb(error)
+    } else {
+      return _export(password)
+    }
+  })
   // } else {
   // return _export(password)
   // }
@@ -623,10 +623,10 @@ UniversalDApp.prototype.exportPrivateKey = function(address, cb) {
 
 /**
  * @rv: Import account for cardano testnet
- * @param {(error:string)=>void} cb 
+ * @param {(error:string)=>void} cb
  */
-UniversalDApp.prototype.importAccount = function(cb) {
-  const _saveKeystore = (keystore, password)=> {
+UniversalDApp.prototype.importAccount = function (cb) {
+  const _saveKeystore = (keystore, password) => {
     // save address and password to executionContext for temporary use
     executionContext.saveAddressAndPassword(keystore.address, password)
     // save keystore to `rv-accounts`
@@ -646,20 +646,20 @@ UniversalDApp.prototype.importAccount = function(cb) {
     return cb(null)
   }
 
-  modalCustom.importAccount((error, {privateKey, password, keystore})=> {
+  modalCustom.importAccount((error, {privateKey, password, keystore}) => {
     if (error) {
       return cb(error)
     } else if (privateKey) {
       privateKey = privateKey.replace(/^0x/, '')
-      keythereum.create(undefined, (dk)=> {
-        keythereum.dump(password, privateKey, dk.salt, dk.iv, undefined, (keystore)=> {
+      keythereum.create(undefined, (dk) => {
+        keythereum.dump(password, privateKey, dk.salt, dk.iv, undefined, (keystore) => {
           _saveKeystore(keystore, password)
         })
       })
     } else if (keystore) {
       try {
         keystore = JSON.parse(keystore)
-        keythereum.recover(password, keystore, (privateKey)=> { // Check if the password is valid
+        keythereum.recover(password, keystore, (privateKey) => { // Check if the password is valid
           privateKey = privateKey.toString('hex')
           if (isNaN('0x' + privateKey)) { // Invalid privateKey
             const error = privateKey
@@ -668,7 +668,7 @@ UniversalDApp.prototype.importAccount = function(cb) {
             _saveKeystore(keystore, password)
           }
         })
-      } catch(error) {
+      } catch (error) {
         return cb(error)
       }
     } else {
@@ -679,9 +679,9 @@ UniversalDApp.prototype.importAccount = function(cb) {
 
 /**
  * @rv: Add custom RPC information to local storage
- * @param {{rpcUrl:string, chainId:number, vm:string}} param0 
+ * @param {{rpcUrl:string, chainId:number, vm:string}} param0
  */
-UniversalDApp.prototype.addCustomRPC = function({rpcUrl, chainId, vm}) {
+UniversalDApp.prototype.addCustomRPC = function ({rpcUrl, chainId, vm}) {
   rpcUrl = rpcUrl.trim()
   let name = `${rpcUrl} (chainId: ${chainId})`
   let context = `custom-rpc-${name}`
@@ -697,7 +697,7 @@ UniversalDApp.prototype.addCustomRPC = function({rpcUrl, chainId, vm}) {
     vm
   }
   const customRPCs = this._api.config.get('custom-rpc-list') || []
-  let find = false 
+  let find = false
   for (let i = 0; i < customRPCs.length; i++) {
     if (customRPCs[i] && customRPCs[i].rpcUrl === rpcUrl) {
       find = true
@@ -714,10 +714,10 @@ UniversalDApp.prototype.addCustomRPC = function({rpcUrl, chainId, vm}) {
 
 /**
  * @rv: Connect user to Custom RPC
- * @param {(error:string, customRPC:object, vm:string)=> void} cb 
+ * @param {(error:string, customRPC:object, vm:string)=> void} cb
  */
-UniversalDApp.prototype.connectToCustomRPC = function(cb) {
-  modalCustom.connectToCustomRPC((error, {rpcUrl, chainId, vm})=> {
+UniversalDApp.prototype.connectToCustomRPC = function (cb) {
+  modalCustom.connectToCustomRPC((error, {rpcUrl, chainId, vm}) => {
     if (error) {
       return cb(error)
     } else {

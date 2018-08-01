@@ -102,11 +102,11 @@ function ExecutionContext () {
 
   // @rv: save password for address temporarily
   var addressPasswordMap = {}
-  this.saveAddressAndPassword = function(address, password) {
+  this.saveAddressAndPassword = function (address, password) {
     address = address.replace(/^0x/, '')
     addressPasswordMap[address] = password
   }
-  this.getPasswordFromAddress = function(address) {
+  this.getPasswordFromAddress = function (address) {
     address = address.replace(/^0x/, '')
     return addressPasswordMap[address]
   }
@@ -122,7 +122,7 @@ function ExecutionContext () {
   /**
    * @rv: Check if the current context is of type custom RPC
    */
-  this.isCustomRPC = function() {
+  this.isCustomRPC = function () {
     return executionContext && executionContext.startsWith('custom-rpc-')
   }
 
@@ -130,9 +130,9 @@ function ExecutionContext () {
     return this.isVM() ? web3VM : web3
   }
 
-  this.isIeleVM = function() { // TODO: @rv: use new endpoint to check if the node is using iele vm
+  this.isIeleVM = function () { // TODO: @rv: use new endpoint to check if the node is using iele vm
     const customRPCList = this.config.get('custom-rpc-list') || []
-    const customRPC = customRPCList.filter((x)=> x.context === executionContext)[0]
+    const customRPC = customRPCList.filter((x) => x.context === executionContext)[0]
     if (customRPC) {
       return customRPC.vm === 'ielevm'
     } else {
@@ -288,7 +288,7 @@ var transactionDetailsLinks = {
   'Main': 'https://www.etherscan.io/tx/',
   'Rinkeby': 'https://rinkeby.etherscan.io/tx/',
   'Ropsten': 'https://ropsten.etherscan.io/tx/',
-  'Kovan': 'https://kovan.etherscan.io/tx/',
+  'Kovan': 'https://kovan.etherscan.io/tx/'
 }
 
 var transactionDetailsLinksRV = {

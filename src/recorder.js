@@ -38,7 +38,7 @@ class Recorder {
           if (selectedContract) {
             const abi = selectedContract.object.abi
             const isIele = selectedContract.object.ielevm // @rv: check iele
-            // console.log('-- isIele: ', isIele) 
+            // console.log('-- isIele: ', isIele)
             if (!isIele) { // TODO: <= support iele for record here.
               const sha3 = ethutil.bufferToHex(ethutil.sha3(abi))
               record.abi = sha3

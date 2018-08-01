@@ -418,7 +418,7 @@ function txDetails (e, tx, data, obj) {
       transactionCost: data.tx.transactionCost,
       executionCost: data.tx.executionCost,
       blockNumber: data.tx.blockNumber,
-      nonce: data.tx.nonce,
+      nonce: data.tx.nonce
     })
     tx.appendChild(table)
   }
@@ -437,7 +437,7 @@ function createTable (opts) {
       '0x06': 'deploying to an account that already exists',
       '0x07': 'insufficient balance to transfer',
       '0x08': 'negative balance or gas limit or call depth exceeded',
-      '0x09': 'contract being uploaded to blockchain is not well formed',
+      '0x09': 'contract being uploaded to blockchain is not well formed'
     }
     const msg = m[opts.statusCode]
     table.appendChild(yo`
@@ -588,7 +588,7 @@ function createTable (opts) {
     <tr class="${css.tr}">
       <td class="${css.td}"> decoded input </td>
       <td class="${css.td}">${opts['decoded input']}
-        ${copyToClipboard(()=> opts['decoded input'])}
+        ${copyToClipboard(() => opts['decoded input'])}
       </td>
     </tr>`
     table.appendChild(inputDecoded)
@@ -611,7 +611,7 @@ function createTable (opts) {
     <tr class="${css.tr}">
       <td class="${css.td}"> decoded output </td>
       <td class="${css.td}" id="decodedoutput" >${opts['decoded output']}
-        ${copyToClipboard(()=> opts['decoded output'])}
+        ${copyToClipboard(() => opts['decoded output'])}
       </td>
     </tr>`
     table.appendChild(outputDecoded)

@@ -102,7 +102,7 @@ function runTab (appAPI = {}, appEvents = {}, opts = {}) {
   <div>
     ${settings(container, appAPI, appEvents, opts)}
     ${contractDropdown(event, appAPI, appEvents, opts, self)}
-    ${''/*recorderCard.render() // @rv: disabled recorder */} 
+    ${''/* recorderCard.render() // @rv: disabled recorder */} 
     ${self._view.instanceContainer}
   </div>
   `
@@ -121,7 +121,7 @@ function runTab (appAPI = {}, appEvents = {}, opts = {}) {
 
   function setFinalContext () {
     // @rv: toggle RV elements
-    toggleRVElements() 
+    toggleRVElements()
     // set the final context. Cause it is possible that this is not the one we've originaly selected
     selectExEnv.value = executionContext.getProvider()
     fillAccountsList(appAPI, opts, el)
@@ -132,7 +132,7 @@ function runTab (appAPI = {}, appEvents = {}, opts = {}) {
     let context = selectExEnv.options[selectExEnv.selectedIndex].value
 
     // @rv: set endPointUrl for Custom RPC
-    let endPointUrl = null;
+    let endPointUrl = null
     if (context.startsWith('custom-rpc-')) {
       const customRPCList = opts.config.get('custom-rpc-list') || []
       for (let i = 0; i < customRPCList.length; i++) {
@@ -300,7 +300,7 @@ function makeRecorder (appAPI, appEvents, opts, self) {
   }
 
   return { recordButton, runButton }
-}*/
+} */
 
 /* ------------------------------------------------
     CONTRACT (deploy or access deployed)
@@ -360,9 +360,9 @@ function contractDropdown (events, appAPI, appEvents, opts, self) {
   function setInputParamsPlaceHolder () {
     createPanel.innerHTML = ''
     if (opts.compiler.getContract && selectContractNames.selectedIndex >= 0 && selectContractNames.children.length > 0) {
-      // @rv: support iele bytecode 
+      // @rv: support iele bytecode
       const contract = getSelectedContract().contract
-      let ctrabi, vmbc;
+      let ctrabi, vmbc
       if (contract.object.sourceLanguage === 'solidity') { // solidity language
         ctrabi = txHelper.getConstructorInterface(contract.object.abi)
       } else { // iele language
@@ -383,8 +383,8 @@ function contractDropdown (events, appAPI, appEvents, opts, self) {
   // DEPLOY INSTANCE
   /**
    * @rv
-   * @param {} args 
-   * @param {{sourceLanguage: string, vm: string, ielevm?:object, evm?:object, abi: object}} contract contract object 
+   * @param {} args
+   * @param {{sourceLanguage: string, vm: string, ielevm?:object, evm?:object, abi: object}} contract contract object
    */
   function createInstance (args) {
     const selectedContract = getSelectedContract()
@@ -398,7 +398,7 @@ function contractDropdown (events, appAPI, appEvents, opts, self) {
       if (selectedContract.contract.object.evm.bytecode.object.length === 0) { // evm
         modalDialogCustom.alert('This contract does not implement all functions and thus cannot be created.')
         return
-      } 
+      }
     }
 
     let constructor
@@ -617,8 +617,8 @@ function settings (container, appAPI, appEvents, opts) {
   }
 
   // @rv: import account
-  function importAccount() {
-    opts.udapp.importAccount((error)=> {
+  function importAccount () {
+    opts.udapp.importAccount((error) => {
       if (error) {
         addTooltip(`Failed to import account. ` + error)
       } else {
@@ -628,7 +628,7 @@ function settings (container, appAPI, appEvents, opts) {
   }
 
   // @rv: open faucet website
-  function requestFromFaucet() {
+  function requestFromFaucet () {
     const $txOrigin = $('#txorigin')
     const address = $txOrigin.val()
     if (address === 'unknown' || !address) {
@@ -639,7 +639,7 @@ function settings (container, appAPI, appEvents, opts) {
     }
     const context = executionContext.getProvider()
     let targetUrl = '',
-        txLink = ''
+      txLink = ''
     if (context === 'custom-rpc-kevm-testnet') {
       targetUrl = `https://kevm-testnet.iohkdev.io:8099/faucet?address=${address}`
       txLink = `https://kevm-testnet.iohkdev.io/transaction/`
@@ -651,13 +651,13 @@ function settings (container, appAPI, appEvents, opts) {
     }
     appAPI.logMessage(`request from Faucet pending...`)
     requestFundsIcon.classList.add(css.spinningIcon)
-    setTimeout(()=> { // Delay the request for a bit.
+    setTimeout(() => { // Delay the request for a bit.
       window['fetch'](targetUrl, {
         method: 'POST',
         cors: true
-      }).then((response)=> {
+      }).then((response) => {
         return response.text()
-      }).then((receipt)=> {
+      }).then((receipt) => {
         requestFundsIcon.classList.remove(css.spinningIcon)
         if (!isNaN(receipt)) {
           txLink = `${txLink}${receipt}`
@@ -667,7 +667,7 @@ function settings (container, appAPI, appEvents, opts) {
         } else {
           throw receipt
         }
-      }).catch((error)=> {
+      }).catch((error) => {
         requestFundsIcon.classList.remove(css.spinningIcon)
         appAPI.logMessage(`request from Faucet errored: ${error}`)
       })
@@ -675,30 +675,30 @@ function settings (container, appAPI, appEvents, opts) {
   }
 
   // @rv: remove account
-  function removeAccount() {
+  function removeAccount () {
     const $txOrigin = $('#txorigin')
     const address = $txOrigin.val()
     if (address === 'unknown' || !address) {
       addTooltip('No account selected')
     } else {
-      opts.udapp.removeAccount(address, (error)=> {
+      opts.udapp.removeAccount(address, (error) => {
         if (error) {
           addTooltip('Failed to remove account: ' + address)
         } else {
           fillAccountsList(appAPI, opts, document.body)
         }
-      }) 
+      })
     }
   }
 
   // @rv: send transaction
-  function sendCustomTransaction() {
+  function sendCustomTransaction () {
     const $txOrigin = $('#txorigin')
     const address = $txOrigin.val()
     if (address === 'unknown' || !address) {
       addTooltip('No account selected')
     } else {
-      opts.udapp.sendCustomTransaction(address, (error)=> {
+      opts.udapp.sendCustomTransaction(address, (error) => {
         if (error) {
           appAPI.logMessage(`transact from ${address} errored: ${error}`)
         } else {
@@ -709,13 +709,13 @@ function settings (container, appAPI, appEvents, opts) {
   }
 
   // @rv: export private key
-  function exportPrivateKey() {
+  function exportPrivateKey () {
     const $txOrigin = $('#txorigin')
     const address = $txOrigin.val()
     if (address === 'unknown' || !address) {
       addTooltip('No account selected')
     } else {
-      opts.udapp.exportPrivateKey(address, (error)=> {
+      opts.udapp.exportPrivateKey(address, (error) => {
         if (error) {
           addTooltip('Failed to export private key for account: ' + address + '\n' + error)
         } else {
@@ -726,13 +726,13 @@ function settings (container, appAPI, appEvents, opts) {
   }
 
   // @rv: connect to custom rpc
-  function connectToCustomRPC() {
-    opts.udapp.connectToCustomRPC((error, customRPC)=> {
+  function connectToCustomRPC () {
+    opts.udapp.connectToCustomRPC((error, customRPC) => {
       if (error) {
         addTooltip('Failed to connect to Custom RPC: ' + error)
       } else {
         const $environmentSelect = $('#selectExEnvOptions')
-        let find = false 
+        let find = false
         const $options = $('option', $environmentSelect)
         for (let i = 0; i < $options.length; i++) {
           if ($options[i].getAttribute('value') === customRPC.context) {
@@ -753,7 +753,7 @@ function settings (container, appAPI, appEvents, opts) {
   }
 
   // @rv: remove custom rpc
-  function removeCustomRPC() {
+  function removeCustomRPC () {
     const $environmentSelect = $('#selectExEnvOptions')
     const context = $environmentSelect.val()
     const customRPCList = opts.config.get('custom-rpc-list')
@@ -763,7 +763,7 @@ function settings (container, appAPI, appEvents, opts) {
         newCustomRPCList.push(customRPCList[i])
       }
     }
-    
+
     opts.config.set('custom-rpc-list', newCustomRPCList) // update `custom-rpc-list`
 
     const newContext = newCustomRPCList.length ? newCustomRPCList[0].context : 'vm' // change selected environment
@@ -780,10 +780,10 @@ function settings (container, appAPI, appEvents, opts) {
   }
 
   // @rv: setup predefined Custom RPCs
-  function setupPredefinedCustomRPCs() {
+  function setupPredefinedCustomRPCs () {
     const customRPCList = opts.config.get('custom-rpc-list') || []
 
-    function addIfNotExists(customRPC) {
+    function addIfNotExists (customRPC) {
       let find = false
       for (let i = 0; i < customRPCList.length; i++) {
         if (customRPCList[i].context === customRPC.context) {
@@ -816,19 +816,19 @@ function settings (container, appAPI, appEvents, opts) {
     })
 
     // TODO: remove the `filter` below in the future when IELE testnet launches
-    opts.config.set('custom-rpc-list', customRPCList.filter((x)=> x.context !== 'custom-rpc-iele-testnet-dev'))
+    opts.config.set('custom-rpc-list', customRPCList.filter((x) => x.context !== 'custom-rpc-iele-testnet-dev'))
   }
 
   return el
 }
 
 // @rv: show/hide specific elements
-function toggleRVElements() {
+function toggleRVElements () {
   if (executionContext.isCustomRPC()) {
     $('#account-extra-section').show()
 
     const context = executionContext.getProvider()
-    if (context === 'custom-rpc-kevm-testnet' || 
+    if (context === 'custom-rpc-kevm-testnet' ||
         context === 'custom-rpc-iele-testnet') {
       $('#request-from-faucet-btn').show()
       $('#remove-custom-rpc-icon').hide()

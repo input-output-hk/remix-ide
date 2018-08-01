@@ -43,7 +43,6 @@ tape('debug contract', function (t) {
   })
 })
 
-
 function testDebugging (t, debugManager) {
   // stack
   debugManager.traceManager.getStackAt(4, (error, callstack) => {

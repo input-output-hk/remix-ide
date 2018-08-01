@@ -97,7 +97,7 @@ module.exports = {
   encodeFunctionCall: function (params, funAbi, isIele, callback) { // TODO: isIele
     this.encodeParams(params, funAbi, isIele, (error, encodedParam) => {
       if (error) return callback(error)
-      if (isIele) { // TODO: fix this 
+      if (isIele) { // TODO: fix this
         callback(null, { dataHex: RLP.encode([funAbi.name, encodedParam]).toString('hex'), funAbi, funArgs: encodedParam.funArgs })
       } else {
         callback(null, { dataHex: helper.encodeFunctionId(funAbi) + encodedParam.dataHex, funAbi, funArgs: encodedParam.funArgs })
@@ -214,7 +214,7 @@ module.exports = {
       }
       if (!isConstructor || funArgs.length > 0 || contract.vm === 'ielevm') {
         if (funArgs.length !== funAbi.inputs.length) { // @rv: Make arguments mandatory
-          return callback(`Function ${funAbi.name ? `"${funAbi.name}" `: ""}argument count mismatch. Expected ${funAbi.inputs.length} argument${funAbi.inputs.length > 1 ? 's':''}, but got ${funArgs.length}.`)
+          return callback(`Function ${funAbi.name ? `"${funAbi.name}" ` : ''}argument count mismatch. Expected ${funAbi.inputs.length} argument${funAbi.inputs.length > 1 ? 's' : ''}, but got ${funArgs.length}.`)
         }
         try {
           data = helper.encodeParams(funAbi, funArgs, contract.sourceLanguage, contract.vm) // @rv: Support iele
@@ -238,7 +238,7 @@ module.exports = {
         // console.log('* contractByteCode: ', contract.ielevm.bytecode.object)
         // console.log('* data: ', data)
         // console.log('* funArgs: ', funArgs)
-        contractBytecode = contract.ielevm.bytecode.object 
+        contractBytecode = contract.ielevm.bytecode.object
         dataHex = RLP.encode([(contractBytecode.startsWith('0x') ? '' : '0x') + contractBytecode, data]).toString('hex') // 0x here is necessary
         // console.log('* dataHex: ', dataHex)
       } else {

@@ -20,7 +20,7 @@ class ContextualListener {
     events.compiler.register('compilationFinished', (success, data, source) => {
       // console.log('@contextualListener.js compilationFinished:\n', success, data, source)
       // TODO: @rv add .iele support
-      if (source.target && !source.target.endsWith('.sol')) { return; }
+      if (source.target && !source.target.endsWith('.sol')) { return }
       this._stopHighlighting()
       this._index = {
         Declarations: {},
@@ -172,7 +172,7 @@ class ContextualListener {
         var contractAST = this.nodes[i]
         this.contract = this.results.data.contracts[this.results.source.target][contractAST.attributes.name]
         if (this.contract.vm && this.contract.vm === 'ielevm') { // TODO: @rv: support IELE vm
-          return 
+          return
         }
         this.estimationObj = this.contract.evm.gasEstimates
         this.creationCost = this.estimationObj.creation.totalCost
