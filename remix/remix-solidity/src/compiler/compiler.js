@@ -1,6 +1,5 @@
 'use strict'
 
-var solc = require('solc/wrapper')
 var solcABI = require('solc/abi')
 
 var webworkify = require('webworkify')
@@ -244,28 +243,27 @@ function Compiler (handleImportCall) {
     }
   }
 
-  async function compileSolidityToIELE(result, source, cb) {
+  async function compileSolidityToIELE(source, cb) {
+    console.log('@compileSolidityToIELE')
     const sources = source.sources
     const target = source.target
-    delete result["errors"]
-    delete result["error"]
 
     async function helper(sources, target) {
       // console.log('@compileSolidityToIELE', result, source)
-      const params = [target, {}]
-      for (const filePath in sources) {
-        params[1][filePath] = sources[filePath].content
-      }
       try {
-        // get IELE assembly
+        const params = [["ast","abi"], target, {}]
+        for (const filePath in sources) {
+          params[2][filePath] = sources[filePath].content
+        }
+        // Get Solidity ABI and AST
         const response1 = await window['fetch'](COMPILER_API_GATEWAY, {
           method: 'POST',
           mode: 'cors',
           headers: {
-            'content-type': 'application/json',
+            'content-type': 'application/json'
           },
           body: JSON.stringify({
-            method: 'sol2iele_asm',
+            method: 'isolc_combined_json',
             params: params,
             jsonrpc: '2.0'
           })
@@ -274,12 +272,52 @@ function Compiler (handleImportCall) {
         if (json1['error']) {
           throw json1['error']['data'].toString()
         }
+        const result = JSON.parse(json1["result"].trim().split("\n").pop())
+        console.log('* result 1:', Object.assign({}, result))
+
+        // update structure of `result` 
+        const contracts = {}
+        for (const slug in result.contracts) {
+          const i = slug.lastIndexOf(':')
+          const filePath = slug.slice(0, i)
+          const contractName = slug.slice(i + 1)
+          if (!(filePath in contracts)) {
+            contracts[filePath] = {}
+          }
+          contracts[filePath][contractName] = result.contracts[slug]
+          contracts[filePath][contractName]["abi"] = JSON.parse(contracts[filePath][contractName]["abi"])
+        }
+        result.contracts = contracts
+        for (const filePath in result.sources) {
+          const AST = result.sources[filePath]["AST"]
+          result.sources[filePath]["legacyAST"] = AST
+          delete(result.sources[filePath]["AST"])
+        }
+        console.log('* result 2: ', result)
+
+        // get IELE assembly
+        const response2 = await window['fetch'](COMPILER_API_GATEWAY, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({
+            method: 'sol2iele_asm',
+            params: params.slice(1),
+            jsonrpc: '2.0'
+          })
+        })
+        const json2 = await response2.json()
+        if (json2['error']) {
+          throw json2['error']['data'].toString()
+        }
   
-        let code = json1['result']
+        let code = json2['result']
         const index = code.indexOf('\n=====')         // TODO: multiple .sol files will produce multiple ====
         code = code.slice(index, code.length)
         const ieleCode = code.trim()
-        let errors = parseSolidityErrors(json1['result'])
+        let errors = parseSolidityErrors(json2['result'])
 
         if (!ieleCode) { // error. eg ballot.sol
           if (errors.length) {
@@ -287,7 +325,7 @@ function Compiler (handleImportCall) {
               errors: errors
             }
           } else {
-            throw json1['result']
+            throw json2['result']
           }
         }
 
@@ -315,6 +353,7 @@ function Compiler (handleImportCall) {
                 abi,
                 ieleAssembly: assembly
               },
+              abi: result.contracts[filePath][contractName]["abi"]
             }
           }
         }
@@ -322,65 +361,14 @@ function Compiler (handleImportCall) {
         if (errors.length) {
           result['errors'] = errors
         }
-
-        // Get Solidity ABI 
-        const response2 = await window['fetch'](COMPILER_API_GATEWAY, {
-          method: 'POST',
-          mode: 'cors',
-          headers: {
-            'content-type': 'application/json'
-          },
-          body: JSON.stringify({
-            method: 'sol2iele_abi',
-            params: params,
-            jsonrpc: '2.0'
-          })
-        })
-        const json2 = await response2.json()
-        if (json2['error']) {
-          throw json2['error']['data'].toString()
-        }
-        const abiMap = parseSolidityCodeAbi(json2['result'])
-        for (const filePath in abiMap) {
-          for (const contractName in abiMap[filePath]) {
-            const abi = abiMap[filePath][contractName]
-            result.contracts[filePath][contractName]['abi'] = abi
-          }
-        }
-
-        // Get Solidity AST
-        const response3 = await window['fetch'](COMPILER_API_GATEWAY, {
-          method: 'POST',
-          mode: 'cors',
-          headers: {
-            'content-type': 'application/json'
-          },
-          body: JSON.stringify({
-            method: 'sol2iele_ast',
-            params: params,
-            jsonrpc: '2.0'
-          })
-        })
-        const json3 = await response3.json()
-        if (json3['error']) {
-          throw json3['error']['data'].toString()
-        }
-        /*
-        const abiMap = parseSolidityCodeAbi(json2['result'])
-        for (const filePath in abiMap) {
-          for (const contractName in abiMap[filePath]) {
-            const abi = abiMap[filePath][contractName]
-            result.contracts[filePath][contractName]['abi'] = abi
-          }
-        }
-        */
+        return result
       } catch(error) {
         throw error
       }
     }
 
     try {
-      await helper(sources, target)
+      const result = await helper(sources, target)
       return cb(result)
     } catch(error) {
       console.log(error)
@@ -535,28 +523,15 @@ function Compiler (handleImportCall) {
   }
 
   function onInternalCompilerLoaded () {
+    console.log("@onInternalCompilerLoaded: ", worker)
     if (worker === null) {
-      compileJSON = async function (source, optimize, cb) {
-        const contracts = {}
-        const sources = {}
-        for (const filePath in source.sources) {
-          contracts[filePath] = {}
-          sources[filePath] = {}
-        }
-        const result = {
-          contracts: contracts,
-          sources: {}
-        }
-
+      compileJSON = function (source, optimize, cb) {
         if (compileToIELE) {
-          return compileSolidityToIELE(result, source, (result)=> {
+          return compileSolidityToIELE(source, (result)=> {
             console.log('Compiled result: ', result)
             return compilationFinished(result, [], source)
           })
         }
-
-        // console.log('@compilationFinished: ', result)
-        compilationFinished(result, missingInputs, source)
       }
       onCompilerLoaded('isolc')
     }
@@ -690,6 +665,7 @@ function Compiler (handleImportCall) {
 
   // TODO: needs to be changed to be more node friendly
   this.loadVersion = function (usingWorker, url) {
+    console.log('@loadVersion')
     self.event.trigger('loadingCompiler', [url, usingWorker])
 
     if (usingWorker) {
