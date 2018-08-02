@@ -58,7 +58,6 @@ class TxListener {
       if (this._loopId && executionContext.getProvider() !== 'vm') return // we seems to already listen on a "web3" network
 
       let output
-      let decodedOutput
       if (executionContext.isVM()) {
         output = txResult.result.vm.return
       } else if (payload.vm === 'ielevm') { // iele vm

@@ -1,14 +1,9 @@
 'use strict'
 
-var solcABI = require('solc/abi')
-
 var webworkify = require('webworkify')
-
 var compilerInput = require('./compiler-input')
-
 var remixLib = require('remix-lib')
 var EventManager = remixLib.EventManager
-
 var txHelper = require('./txHelper')
 
 /*
@@ -21,8 +16,6 @@ function Compiler (handleImportCall, getCompilerAPIUrl) {
   var compileJSON
 
   var worker = null
-
-  var currentVersion
 
   var optimize = false
 
@@ -72,7 +65,6 @@ function Compiler (handleImportCall, getCompilerAPIUrl) {
   this.setCompileJSON = setCompileJSON // this is exposed for testing
 
   function onCompilerLoaded (version) {
-    currentVersion = version
     self.event.trigger('compilerLoaded', [version])
   }
 
@@ -83,7 +75,7 @@ function Compiler (handleImportCall, getCompilerAPIUrl) {
    * @return {{[key:string]:{[key:string]:string}}}
    */
   function parseIELECode (ieleCode, optionalFilePath) {
-    ieleCode = ieleCode.replace(/^IELE\s+assembly\s*\:\s*$/mgi, '')
+    ieleCode = ieleCode.replace(/^IELE\s+assembly\s*:\s*$/mgi, '')
     const sections = ieleCode.split(/^=+\s+([^=]+?)\s+=+\s/m).filter((x) => x.trim().length)
     const output = {}
     function helper (ieleCode) {
@@ -173,7 +165,7 @@ function Compiler (handleImportCall, getCompilerAPIUrl) {
    * Reference:
    * https://solidity.readthedocs.io/en/latest/using-the-compiler.html?highlight=error-types#error-types
    */
-  function parseSolidityServiceResponse(message="") {
+  function parseSolidityServiceResponse (message = '') {
     message = message.trim().replace('Warning: This is a pre-release compiler version, please do not use it in production.', '').trim()
     const starts = []
     let lines = message.split('\n')
@@ -182,7 +174,7 @@ function Compiler (handleImportCall, getCompilerAPIUrl) {
     try {
       result = JSON.parse(json)
       lines = lines.slice(0, lines.length - 1)
-    } catch(error) {
+    } catch (error) {
       result = {}
     }
     for (let i = 0; i < lines.length; i++) {
@@ -201,7 +193,7 @@ function Compiler (handleImportCall, getCompilerAPIUrl) {
       messages.push(t.join('\n').trim())
     }
     const errors = messages.map((message) => {
-      const errorMatch = message.match(/^[^:]*:[0-9]*:(?:[0-9]*:)?\s+([^:]+)\:\s+/)
+      const errorMatch = message.match(/^[^:]*:[0-9]*:(?:[0-9]*:)?\s+([^:]+):\s+/)
       let isWarning = true
       if (errorMatch && errorMatch[1]) {
         const errorType = errorMatch[1]
@@ -251,7 +243,7 @@ function Compiler (handleImportCall, getCompilerAPIUrl) {
           throw new Error(json['error']['data'].toString())
         }
         const result = parseSolidityServiceResponse(json['result'])
- 
+
         // update structure of `result`
         if (result.contracts) {
           const contracts = {}
@@ -264,17 +256,17 @@ function Compiler (handleImportCall, getCompilerAPIUrl) {
             }
             const contract = result.contracts[slug]
             contract['abi'] = JSON.parse(contract['abi'])
-            contract['metadata'] = { vm: "iele vm" }
+            contract['metadata'] = { vm: 'iele vm' }
             contract['sourceLanguage'] = 'solidity'
             contract['vm'] = 'ielevm'
             contract['ielevm'] = {
               bytecode: {
                 object: contract['bin']
               },
-              ieleAssembly: contract['asm']["code"]
+              ieleAssembly: contract['asm']['code']
             }
-            delete contract["asm"]
-            delete contract["bin"]
+            delete contract['asm']
+            delete contract['bin']
             contracts[filePath][contractName] = contract
           }
           result.contracts = contracts
@@ -316,9 +308,6 @@ function Compiler (handleImportCall, getCompilerAPIUrl) {
 
   function parseIeleErrors (message) {
     if (isNaN('0x' + message)) {
-      let start = 0
-      let end = 0
-      const lines = message.split('\n')
       return [{
         component: 'general',
         formattedMessage: message,
@@ -336,7 +325,7 @@ function Compiler (handleImportCall, getCompilerAPIUrl) {
       const result = {contracts: {}, errors: r.errors}
       for (const filePath in r.contracts) {
         for (const contractName in r.contracts[filePath]) {
-          const {abi, assembly, bytecode} = r.contracts[filePath][contractName]
+          const {abi, bytecode} = r.contracts[filePath][contractName]
           if (!(filePath in result.contracts)) {
             result.contracts[filePath] = {}
           }
@@ -421,7 +410,7 @@ function Compiler (handleImportCall, getCompilerAPIUrl) {
     ieleCode = ieleCode.slice(0, i + 1)
 
     // analyze functions
-    const regex = /\sdefine\s+(public\s+)*\@([\w\W]+?)\(([^)]*?)\)\s*\{/g
+    const regex = /\sdefine\s+(public\s+)*@([\w\W]+?)\(([^)]*?)\)\s*\{/g
     const abiArray = []
     match = null
     while ((match = regex.exec(ieleCode)) !== null) {
@@ -671,7 +660,7 @@ function Compiler (handleImportCall, getCompilerAPIUrl) {
     for (const fileName in files) {
       const lines = files[fileName].content.split('\n')
       lines.forEach((line, index) => {
-        const match = line.match(/^\s*import\s*[\'\"]([^\'\"]+)[\'\"]\s*;/)
+        const match = line.match(/^\s*import\s*['"]([^'"]+)['"]\s*;/)
         if (match) {
           let importFilePath = match[1]
           if (importFilePath.startsWith('./')) {
@@ -712,21 +701,6 @@ function Compiler (handleImportCall, getCompilerAPIUrl) {
     }
 
     cb(null, { 'sources': files, 'target': target })
-  }
-
-  function truncateVersion (version) {
-    var tmp = /^(\d+.\d+.\d+)/.exec(version)
-    if (tmp) {
-      return tmp[1]
-    }
-    return version
-  }
-
-  function updateInterface (data) {
-    txHelper.visitContracts(data.contracts, (contract) => {
-      data.contracts[contract.file][contract.name].abi = solcABI.update(truncateVersion(currentVersion), contract.object.abi)
-    })
-    return data
   }
 }
 

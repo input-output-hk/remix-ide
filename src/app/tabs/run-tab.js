@@ -3,7 +3,7 @@ var $ = require('jquery')
 var yo = require('yo-yo')
 var remixLib = require('remix-lib')
 var ethJSUtil = require('ethereumjs-util')
-var csjs = require('csjs-inject')
+// var csjs = require('csjs-inject')
 var txExecution = remixLib.execution.txExecution
 var txFormat = remixLib.execution.txFormat
 var txHelper = remixLib.execution.txHelper
@@ -12,8 +12,8 @@ var helper = require('../../lib/helper.js')
 var executionContext = require('../../execution-context')
 var modalDialogCustom = require('../ui/modal-dialog-custom')
 var copyToClipboard = require('../ui/copy-to-clipboard')
-var Card = require('../ui/card')
-var Recorder = require('../../recorder')
+// var Card = require('../ui/card')
+// var Recorder = require('../../recorder')
 var addTooltip = require('../ui/tooltip')
 var css = require('./styles/run-tab-styles')
 var MultiParamManager = require('../../multiParamManager')
@@ -177,7 +177,7 @@ function runTab (appAPI = {}, appEvents = {}, opts = {}) {
     instanceContainer.appendChild(self._view.noInstancesText)
   })
 
-  selectExEnv.dispatchEvent(new Event('change')) // @rv;
+  selectExEnv.dispatchEvent(new window['Event']('change')) // @rv;
   return { render () { return container } }
 }
 
@@ -362,7 +362,7 @@ function contractDropdown (events, appAPI, appEvents, opts, self) {
     if (opts.compiler.getContract && selectContractNames.selectedIndex >= 0 && selectContractNames.children.length > 0) {
       // @rv: support iele bytecode
       const contract = getSelectedContract().contract
-      let ctrabi, vmbc
+      let ctrabi
       if (contract.object.sourceLanguage === 'solidity') { // solidity language
         ctrabi = txHelper.getConstructorInterface(contract.object.abi)
       } else { // iele language
@@ -524,9 +524,9 @@ function settings (container, appAPI, appEvents, opts) {
       <div class=${css.environment}>
         ${net}
         <select id="selectExEnvOptions" onchange=${updateNetwork} class="${css.select}">
-          ${(opts.config.get('custom-rpc-list') || []).map((customRPC)=> {
+          ${(opts.config.get('custom-rpc-list') || []).map((customRPC) => {
             return yo`<option
-              title="${customRPC.name || "Custom"}"
+              title="${customRPC.name || 'Custom'}"
               value="${customRPC.context}" name="executionContext"
               selected> ${customRPC.name || customRPC.rpcUrl}
             </option>`
@@ -640,14 +640,14 @@ function settings (container, appAPI, appEvents, opts) {
       return addTooltip('Your request is being processed')
     }
     const context = executionContext.getProvider()
-    let targetUrl = '',
-        txLink = ''
-    const customRPC = (opts.config.get('custom-rpc-list') || []).filter((customRPC)=> customRPC.context === context)[0]
+    let targetUrl = ''
+    let txLink = ''
+    const customRPC = (opts.config.get('custom-rpc-list') || []).filter((customRPC) => customRPC.context === context)[0]
     if (!customRPC) {
-      return addTooltip('No faucet found for ' + context)	
+      return addTooltip('No faucet found for ' + context)
     } else {
-      targetUrl = customRPC.rpcUrl.replace(/\:\d+\/?$/, '').replace(/\/*$/, '') + `:8099/faucet?address=${address}`
-      txLink = customRPC.rpcUrl.replace(/\:\d+\/?$/, '').replace(/\/*$/, '') + `/transaction/`
+      targetUrl = customRPC.rpcUrl.replace(/:\d+\/?$/, '').replace(/\/*$/, '') + `:8099/faucet?address=${address}`
+      txLink = customRPC.rpcUrl.replace(/:\d+\/?$/, '').replace(/\/*$/, '') + `/transaction/`
     }
     appAPI.logMessage(`request from Faucet pending...`)
     requestFundsIcon.classList.add(css.spinningIcon)
@@ -747,7 +747,7 @@ function settings (container, appAPI, appEvents, opts) {
             </option>`))
         }
         $environmentSelect[0].value = customRPC.context
-        $environmentSelect[0].dispatchEvent(new Event('change'))
+        $environmentSelect[0].dispatchEvent(new window['Event']('change'))
       }
     })
   }
@@ -776,7 +776,7 @@ function settings (container, appAPI, appEvents, opts) {
         break
       }
     }
-    $environmentSelect[0].dispatchEvent(new Event('change'))
+    $environmentSelect[0].dispatchEvent(new window['Event']('change'))
   }
 
   // @rv: setup predefined Custom RPCs
@@ -801,7 +801,7 @@ function settings (container, appAPI, appEvents, opts) {
       name: 'IELE Testnet',
       context: 'custom-rpc-iele-testnet',
       chainId: undefined,
-      rpcUrl: (location.protocol + '//' + location.hostname + ':8546/'),
+      rpcUrl: (window.location.protocol + '//' + window.location.hostname + ':8546/'),
       vm: 'ielevm'
     })
     // You can click `Connect to Custom RPC` button to connect to custom rpc node to do your development testing.

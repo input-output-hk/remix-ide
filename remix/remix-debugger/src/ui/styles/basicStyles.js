@@ -67,7 +67,6 @@ module.exports = {
   button: {
     'border-color': 'transparent',
     'border-radius': '3px',
-    'border': '.3px solid ${colors.veryLightGrey}',
     'cursor': 'pointer',
     'min-height': '25px',
     'max-height': '25px',

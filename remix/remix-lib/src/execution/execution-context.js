@@ -88,7 +88,8 @@ function ExecutionContext () {
 
   this.init = function (config) {
     this.config = config // @rv: save config to this object scope
-    return executionContext = 'custom-rpc-iele-testnet'
+    executionContext = 'custom-rpc-iele-testnet'
+    return
     /*
     if (config.get('settings/always-use-vm')) {
       executionContext = 'vm'
@@ -145,7 +146,7 @@ function ExecutionContext () {
       callback(null, { id: '-', name: 'VM' })
     } else {
       const customRPCList = this.config.get('custom-rpc-list') || []
-      const customRPC = customRPCList.filter((x)=> x.context === executionContext)[0]
+      const customRPC = customRPCList.filter((x) => x.context === executionContext)[0]
       this.web3().version.getNetwork((err, id) => {
         var name = null
         if (err) name = 'Unknown'
@@ -160,7 +161,7 @@ function ExecutionContext () {
         else name = 'Custom'
 
         if (customRPC) { // @rv: Update transactionDetailsLinksRV
-          transactionDetailsLinksRV[id] = customRPC.rpcUrl.replace(/\:\d+\/?$/, '').replace(/\/*$/, '') + `/transaction/`
+          transactionDetailsLinksRV[id] = customRPC.rpcUrl.replace(/:\d+\/?$/, '').replace(/\/*$/, '') + `/transaction/`
         }
 
         if (id === '1') {

@@ -1,4 +1,3 @@
-/* global Worker */
 var yo = require('yo-yo')
 var csjs = require('csjs-inject')
 var minixhr = require('minixhr')
