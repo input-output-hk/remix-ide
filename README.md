@@ -1,16 +1,12 @@
-[![Build Status](https://travis-ci.org/ethereum/remix-ide.svg?branch=master)](https://travis-ci.org/ethereum/remix-ide)
-[![BrowserStack Status](https://www.browserstack.com/automate/badge.svg?badge_key=MTc5WVBoNnhOTGhaUng3ZFI3MDZvNWkraHIrd1FNanZIZk80SG9uMkFIND0tLUoyUjd1YVhWRnRrcUJMMnFlbmN3Y0E9PQ==--4085377897aef217e507c8fc46d463eb699838b8)](https://www.browserstack.com/automate/public-build/MTc5WVBoNnhOTGhaUng3ZFI3MDZvNWkraHIrd1FNanZIZk80SG9uMkFIND0tLUoyUjd1YVhWRnRrcUJMMnFlbmN3Y0E9PQ==--4085377897aef217e507c8fc46d463eb699838b8)
-
-
 # Remix
 
-Remix is a browser-based compiler and IDE that enables users to build **Ethereum contracts with Solidity language** and to debug transactions.
+Remix is a browser-based compiler and IDE that enables users to build **Ethereum contracts with Solidity language and IELE language** and to debug transactions.
 
-To try it out, visit [https://remix.ethereum.org](https://remix.ethereum.org).
+To try it out, visit [https://iele-testnet.iohkdev.io/remix/](https://iele-testnet.iohkdev.io/remix/).
 
 Remix consists of many modules and in this repository you will find the Remix IDE (aka. Browser-Solidity).
 
-![Remix screenshot](https://i.imgur.com/clfc7US.png)
+![Remix screenshot](https://user-images.githubusercontent.com/1908863/43663077-c30cddda-972d-11e8-8697-8dfbbaaec71e.png)
 
 ## INSTALLATION (by RV):
 
@@ -85,20 +81,6 @@ Then you will need to either:
 	- Run: `sc -u <USERNAME> -k <ACCESS_KEY>` (see `.travis.yml` for values)
 	- Run: `npm run browser-test-sc`
 
-## Usage as a Chrome Extension
+## Tutorial
 
-If you would like to use this as a Chrome extension, you must either build it first or pull from the `gh-pages` branch, both described above.
-After that, follow these steps:
-
-- Browse to `chrome://extensions/`
-- Make sure 'Developer mode' has been checked
-- Click 'Load unpacked extension...' to pop up a file-selection dialog
-- Select your `remix-ide` folder
-
-## Documentation
-
-To see details about how to use Remix for developing and/or debugging Solidity contracts, please see [our documentation page](https://remix.readthedocs.io)
-
-
-## References
-* [Web3 sendRawTransaction](https://ethereum.stackexchange.com/questions/36358/how-to-properly-create-a-raw-transaction-and-sign-it-using-web3-in-browser?rq=1&utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa)
+To see details about how to use Remix for developing and/or debugging Solidity contracts, please see [our tutorial page](https://testnet.iohkdev.io/goguen/iele/get-started/executing-solidity-smart-contracts-on-the-iele-testnet/)
