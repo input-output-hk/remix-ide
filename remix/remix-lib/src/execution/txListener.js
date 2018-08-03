@@ -11,7 +11,7 @@ var txHelper = require('./txHelper')
 const ieleTranslator = require('./ieleTranslator')
 
 const RLP = require('rlp')
-window['RLP'] = RLP
+window.RLP = RLP
 
 /**
   * poll web3 each 2s if web3

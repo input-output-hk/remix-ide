@@ -118,7 +118,7 @@ function Compiler (handleImportCall, getCompilerAPIUrl) {
       const ieleFilePath = filePath.replace(/\.sol$/, '.iele')
       for (const contractName in parsed[filePath]) {
         const ieleCode = parsed[filePath][contractName]
-        const response = await window['fetch'](getCompilerAPIUrl(), {
+        const response = await window.fetch(getCompilerAPIUrl(), {
           method: 'POST',
           mode: 'cors',
           headers: {
@@ -226,7 +226,7 @@ function Compiler (handleImportCall, getCompilerAPIUrl) {
           params[2][filePath] = sources[filePath].content
         }
         // Get Solidity ABI, AST, BIN, ASM
-        const response = await window['fetch'](getCompilerAPIUrl(), {
+        const response = await window.fetch(getCompilerAPIUrl(), {
           method: 'POST',
           mode: 'cors',
           headers: {

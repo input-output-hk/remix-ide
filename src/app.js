@@ -1011,30 +1011,30 @@ Please make a backup of your contracts and start using http://remix.ethereum.org
 
   // Registration for Analytics events.
   rhpEvents.compiler.register('compilerLoaded', version => {
-    window['gtag']('event', 'Compiler', {
+    window.gtag('event', 'Compiler', {
       event_category: 'Loaded',
       event_label: version
     })
   })
   rhpEvents.compiler.register('compilationDuration', duration => {
-    window['gtag']('event', 'Compilation', {
+    window.gtag('event', 'Compilation', {
       event_category: 'Duration',
       value: duration
     })
   })
   rhpEvents.compiler.register('compilationStarted', () => {
-    window['gtag']('event', 'Compilation', {
+    window.gtag('event', 'Compilation', {
       event_category: 'Started'
     })
   })
   rhpEvents.compiler.register('compilationFinished', (success, data, source) => {
-    window['gtag']('event', 'Compilation', {
+    window.gtag('event', 'Compilation', {
       event_category: 'Finished',
       event_label: success ? 'success' : 'failure'
     })
   })
   self._components.righthandpanel.event.register('tabChanged', (name) => {
-    window['gtag']('event', 'Right Hand Panel', {
+    window.gtag('event', 'Right Hand Panel', {
       event_category: 'Change',
       event_label: name
     })

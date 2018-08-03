@@ -177,7 +177,7 @@ function runTab (appAPI = {}, appEvents = {}, opts = {}) {
     instanceContainer.appendChild(self._view.noInstancesText)
   })
 
-  selectExEnv.dispatchEvent(new window['Event']('change')) // @rv;
+  selectExEnv.dispatchEvent(new window.Event('change')) // @rv;
   return { render () { return container } }
 }
 
@@ -652,7 +652,7 @@ function settings (container, appAPI, appEvents, opts) {
     appAPI.logMessage(`request from Faucet pending...`)
     requestFundsIcon.classList.add(css.spinningIcon)
     setTimeout(() => { // Delay the request for a bit.
-      window['fetch'](targetUrl, {
+      window.fetch(targetUrl, {
         method: 'POST',
         cors: true
       }).then((response) => {
@@ -747,7 +747,7 @@ function settings (container, appAPI, appEvents, opts) {
             </option>`))
         }
         $environmentSelect[0].value = customRPC.context
-        $environmentSelect[0].dispatchEvent(new window['Event']('change'))
+        $environmentSelect[0].dispatchEvent(new window.Event('change'))
       }
     })
   }
@@ -776,7 +776,7 @@ function settings (container, appAPI, appEvents, opts) {
         break
       }
     }
-    $environmentSelect[0].dispatchEvent(new window['Event']('change'))
+    $environmentSelect[0].dispatchEvent(new window.Event('change'))
   }
 
   // @rv: setup predefined Custom RPCs

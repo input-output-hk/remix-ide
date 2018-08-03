@@ -362,7 +362,7 @@ function encodeSolidityFunctionName (funAbi) {
   }).join(',') : ''})`
 }
 
-window['ieleTranslator'] = {
+window.ieleTranslator = {
   encode,
   decode,
   encodeSolidityFunctionName
