@@ -37,7 +37,7 @@ function hexToInt (hex) {
   if (!hex.length) {
     hex = '00'
   }
-  if (hex.length % 2 != 0) {
+  if (hex.length % 2 !== 0) {
     hex = '0' + hex
   }
   var num = parseInt(hex, 16)
@@ -60,9 +60,8 @@ function encode (value, type) {
   // }
   const t = type.type
   if (t.match(/\[/)) {
-    let arraySize = 0
     const otype = t.slice(0, t.lastIndexOf('['))
-    const dynamic = !t.match(/\[(\d+)\]$/)
+    const dynamic = !t.match(/\[(\d+)]$/)
     let arraySizeBytesHex = ''
     let arraySizeHex = ''
     if (dynamic) {
@@ -102,7 +101,7 @@ function encode (value, type) {
     } else if (value === 'false' || value === false) {
       return '0x00'
     } else {
-      throw (`IeleTranslator error: Invalid value ${value} with type ${JSON.stringify(type)}.`)
+      throw new Error(`IeleTranslator error: Invalid value ${value} with type ${JSON.stringify(type)}.`)
     }
   } else if (t === 'address') {
     let encoded = value.replace(/^0x/, '')
@@ -113,7 +112,7 @@ function encode (value, type) {
   } else if (t.match(/^uint/)) {
     const num = parseInt(value)
     if (num < 0) {
-      throw (`IeleTranslator error: Invalid value ${value} with type ${JSON.stringify(type)}.`)
+      throw new Error(`IeleTranslator error: Invalid value ${value} with type ${JSON.stringify(type)}.`)
     }
     let encoded = num.toString(16)
     if (t.match(/^uint$/) && parseInt(encoded[0], 16) >= 8) { // negative number
@@ -201,7 +200,7 @@ function encode (value, type) {
     })
     return '0x' + result
   } else {
-    throw (`IeleTranslator Encode error: Invalid value ${value} with type ${JSON.stringify(type)}.`)
+    throw new Error(`IeleTranslator Encode error: Invalid value ${value} with type ${JSON.stringify(type)}.`)
   }
 }
 
@@ -213,7 +212,7 @@ function encode (value, type) {
  */
 function decode (value, type) {
   if (typeof (value) !== 'string') {
-    throw ('IeleTranslator error: Please pass `string` value to **decode** function.')
+    throw new Error('IeleTranslator error: Please pass `string` value to **decode** function.')
   }
   value = value.replace(/^0x/, '') // remove leading 0x
 
@@ -221,8 +220,8 @@ function decode (value, type) {
   if (t.match(/\[/)) {
     let arraySize = 0
     const otype = t.slice(0, t.lastIndexOf('['))
-    if (t.match(/\[(\d+)\]$/)) { // eg: uint[][2]
-      arraySize = parseInt(t.match(/\[(\d+)\]$/)[1], 10)
+    if (t.match(/\[(\d+)]$/)) { // eg: uint[][2]
+      arraySize = parseInt(t.match(/\[(\d+)]$/)[1], 10)
     } else {                     // eg: uint[2][]
       const arraySizeBytes = parseInt(value.slice(value.length - 2, value.length), 16)
       arraySize = parseInt(value.slice(value.length - 2 - arraySizeBytes * 2, value.length - 2), 16)
@@ -342,7 +341,7 @@ function decode (value, type) {
       result: resultArr
     }
   } else {
-    throw (`IeleTranslator Decode error: Invalid value ${value} with type ${JSON.stringify(type)}.`)
+    throw new Error(`IeleTranslator Decode error: Invalid value ${value} with type ${JSON.stringify(type)}.`)
   }
 }
 
@@ -363,7 +362,7 @@ function encodeSolidityFunctionName (funAbi) {
   }).join(',') : ''})`
 }
 
-window['ieleTranslator'] = {
+window.ieleTranslator = {
   encode,
   decode,
   encodeSolidityFunctionName

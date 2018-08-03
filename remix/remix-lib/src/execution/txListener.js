@@ -11,7 +11,7 @@ var txHelper = require('./txHelper')
 const ieleTranslator = require('./ieleTranslator')
 
 const RLP = require('rlp')
-window['RLP'] = RLP
+window.RLP = RLP
 
 /**
   * poll web3 each 2s if web3
@@ -58,7 +58,6 @@ class TxListener {
       if (this._loopId && executionContext.getProvider() !== 'vm') return // we seems to already listen on a "web3" network
 
       let output
-      let decodedOutput
       if (executionContext.isVM()) {
         output = txResult.result.vm.return
       } else if (payload.vm === 'ielevm') { // iele vm

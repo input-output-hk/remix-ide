@@ -140,7 +140,7 @@ function stringType (type, stateDefinitions, contractName, location) {
   */
 function array (type, stateDefinitions, contractName, location) {
   var arraySize
-  var match = type.match(/(.*)\[(.*?)\]( storage ref| storage pointer| memory| calldata)?$/)
+  var match = type.match(/(.*)\[(.*?)]( storage ref| storage pointer| memory| calldata)?$/)
   if (!match) {
     console.log('unable to parse type ' + type)
     return null

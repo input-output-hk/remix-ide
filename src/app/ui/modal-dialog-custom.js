@@ -145,7 +145,7 @@ module.exports = {
           }
 
           const password = importPanel.querySelector('#password-input-2').value
-          const fileReader = new FileReader()
+          const fileReader = new window.FileReader()
           fileReader.onload = function (event) {
             const keystore = event.target.result
             return cb(null, {

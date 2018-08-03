@@ -44,7 +44,7 @@ Renderer.prototype.error = function (message, container, opt) {
     opt.errCol = errLocation.errCol
   } else {
     // @rv, analyze error message for iele code.
-    errLocation = text.trim().match(/^"([^\"]+?)"\s+\(\line\s(\d+),\s+column\s+(\d+)\)\s*\:/)
+    errLocation = text.trim().match(/^"([^"]+?)"\s+\(line\s(\d+),\s+column\s+(\d+)\)\s*:/)
     if (errLocation) {
       errLocation = {
         errFile: errLocation[1],

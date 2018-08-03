@@ -27,7 +27,7 @@ var Editor = require('./app/editor/editor')
 var Renderer = require('./app/ui/renderer')
 var Compiler = require('remix-solidity').Compiler
 var executionContext = require('./execution-context')
-var Debugger = require('./app/debugger/debugger')
+// var Debugger = require('./app/debugger/debugger')
 var StaticAnalysis = require('./app/staticanalysis/staticAnalysisView')
 var FilePanel = require('./app/panels/file-panel')
 var EditorPanel = require('./app/panels/editor-panel')
@@ -296,10 +296,10 @@ Please make a backup of your contracts and start using http://remix.ethereum.org
 
   // ----------------- Compiler -----------------
   // @rv: get absolute /remix/api url for sol2iele compiler services.
-  function getCompilerAPIUrl() {
+  function getCompilerAPIUrl () {
     const context = executionContext.getProvider()
-    const customRPC = (self._api.config.get('custom-rpc-list') || []).filter((customRPC)=> customRPC.context === context)[0]
-    return customRPC.rpcUrl.replace(/\:\d+\/?$/, '').replace(/\/*$/, '') + `/remix/api`
+    const customRPC = (self._api.config.get('custom-rpc-list') || []).filter((customRPC) => customRPC.context === context)[0]
+    return customRPC.rpcUrl.replace(/:\d+\/?$/, '').replace(/\/*$/, '') + `/remix/api`
   }
   var compiler = new Compiler(importFileCb, getCompilerAPIUrl)
   var offsetToLineColumnConverter = new OffsetToLineColumnConverter(compiler.event)
@@ -834,6 +834,8 @@ Please make a backup of your contracts and start using http://remix.ethereum.org
   document.querySelector('#editorWrap').addEventListener('change', onResize)
 
   // ----------------- Debugger -----------------
+  // @rv: disable debugger
+  /*
   var debugAPI = {
     statementMarker: null,
     fullLineMarker: null,
@@ -872,8 +874,7 @@ Please make a backup of your contracts and start using http://remix.ethereum.org
       return offsetToLineColumnConverter.offsetToLineColumn(location, file, compiler.lastCompilationResult)
     }
   }
-  // @rv: disable debugger
-  /*
+
   var transactionDebugger = new Debugger('#debugger', debugAPI, editor.event)
   transactionDebugger.addProvider('vm', executionContext.vm())
   transactionDebugger.addProvider('injected', executionContext.internalWeb3())
@@ -1010,30 +1011,30 @@ Please make a backup of your contracts and start using http://remix.ethereum.org
 
   // Registration for Analytics events.
   rhpEvents.compiler.register('compilerLoaded', version => {
-    gtag('event', 'Compiler', {
+    window.gtag('event', 'Compiler', {
       event_category: 'Loaded',
       event_label: version
     })
   })
   rhpEvents.compiler.register('compilationDuration', duration => {
-    gtag('event', 'Compilation', {
+    window.gtag('event', 'Compilation', {
       event_category: 'Duration',
       value: duration
     })
   })
   rhpEvents.compiler.register('compilationStarted', () => {
-    gtag('event', 'Compilation', {
+    window.gtag('event', 'Compilation', {
       event_category: 'Started'
     })
   })
   rhpEvents.compiler.register('compilationFinished', (success, data, source) => {
-    gtag('event', 'Compilation', {
+    window.gtag('event', 'Compilation', {
       event_category: 'Finished',
       event_label: success ? 'success' : 'failure'
     })
   })
   self._components.righthandpanel.event.register('tabChanged', (name) => {
-    gtag('event', 'Right Hand Panel', {
+    window.gtag('event', 'Right Hand Panel', {
       event_category: 'Change',
       event_label: name
     })

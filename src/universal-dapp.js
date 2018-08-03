@@ -584,7 +584,6 @@ UniversalDApp.prototype.exportPrivateKey = function (address, cb) {
     if (!keystore) {
       return cb('Keystore not found', null)
     } else {
-      const crypto = keystore.crypto
       try {
         keythereum.recover(password, keystore, (privateKey) => { // TODO: I think I should submit a pull request to `keythereum`. The design of this callback function is really bad.
           privateKey = privateKey.toString('hex')
@@ -685,7 +684,7 @@ UniversalDApp.prototype.addCustomRPC = function ({rpcUrl, chainId, vm}) {
   rpcUrl = rpcUrl.trim()
   let name = `${rpcUrl} (chainId: ${chainId})`
   let context = `custom-rpc-${name}`
-  if (rpcUrl.match(/^https\:\/\/kevm-testnet\.iohkdev\.io:8546/)) { // kevm testnet
+  if (rpcUrl.match(/^https:\/\/kevm-testnet\.iohkdev\.io:8546/)) { // kevm testnet
     name = 'KEVM Testnet'
     context = `custom-rpc-kevm-testnet`
   }

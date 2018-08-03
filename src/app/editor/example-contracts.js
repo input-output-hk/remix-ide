@@ -175,5 +175,5 @@ library Assert {
 module.exports = {
   ballot: { name: 'ballot.sol', content: ballot },
   ballot_test: { name: 'ballot_test.sol', content: ballotTest },
-  assert: {name: 'assert.sol', content: assert }
+  assert: { name: 'assert.sol', content: assert }
 }
