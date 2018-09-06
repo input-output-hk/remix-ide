@@ -37,7 +37,7 @@ Most of the the time working with other modules (like debugger etc.) hosted in t
 
 ## DEPLOYMENT (by RV):
 
-Run `npm run build` which will build `./build/app.js` file.   
+Run `npm run build` which will build `./build/app.js` file.
 Then copy the whole repository to server.
 
 ### Troubleshooting building
