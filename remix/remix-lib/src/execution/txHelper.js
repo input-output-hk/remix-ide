@@ -35,11 +35,7 @@ module.exports = {
           if (x.startsWith('0x')) {
             return x
           } else if (!isNaN(x)) {
-            if (x.startsWith('-')) {
-              return ieleTranslator.encode(x, {type: 'int'})
-            } else {
-              return '0x' + parseInt(x).toString(16)
-            }
+            return ieleTranslator.encode(x, {type: 'int'})
           } else {
             return '0x' + x
           }
