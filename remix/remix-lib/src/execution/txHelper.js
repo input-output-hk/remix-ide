@@ -31,8 +31,7 @@ module.exports = {
           if (typeof (x) === 'number') {
             x = x.toString(10)
           }
-
-          if (x.startsWith('0x')) {
+          if (x.match(/^0x/i)) {
             return x
           } else if (!isNaN(x)) {
             return ieleTranslator.encode(x, {type: 'int'})

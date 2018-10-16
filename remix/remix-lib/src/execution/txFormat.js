@@ -206,7 +206,21 @@ module.exports = {
     } else {
       try {
         params = params.replace(/(^|,\s+|,)(\d+)(\s+,|,|$)/g, '$1"$2"$3') // replace non quoted number by quoted number
+        while (true) {
+          const temp = params
+          params = params.replace(/(^|,\s+|,)(\d+)(\s+,|,|$)/g, '$1"$2"$3')
+          if (temp === params) {
+            break
+          }
+        }
         params = params.replace(/(^|,\s+|,)(0[xX][0-9a-fA-F]+)(\s+,|,|$)/g, '$1"$2"$3') // replace non quoted hex string by quoted hex string
+        while (true) {
+          const temp = params
+          params = params.replace(/(^|,\s+|,)(0[xX][0-9a-fA-F]+)(\s+,|,|$)/g, '$1"$2"$3')
+          if (temp === params) {
+            break
+          }
+        }
         funArgs = JSON.parse('[' + params + ']')
       } catch (e) {
         callback('Error encoding arguments: ' + e)

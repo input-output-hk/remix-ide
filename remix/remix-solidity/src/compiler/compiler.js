@@ -748,7 +748,6 @@ function Compiler (handleImportCall, getCompilerAPIUrl) {
   }
 
   function updateInterface (data) {
-    console.log("updateInterface")
     txHelper.visitContracts(data.contracts, (contract) => {
       data.contracts[contract.file][contract.name].abi = solcABI.update(truncateVersion(currentVersion), contract.object.abi)
     })

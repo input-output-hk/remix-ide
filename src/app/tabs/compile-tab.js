@@ -252,7 +252,7 @@ module.exports = class CompileTab {
     if (self.data.allversions && self.data.selectedVersion) self.updateVersionSelector()
     self._view.compileContainer = yo`
       <div class="${css.compileContainer}">
-        <div id="solidity-compiler-version-selector">
+        <div id="solidity-compiler-version-selector" style="display:none;">
           <span>Current version: </span> ${self._view.version}
           ${self._view.versionSelector}
         </div>
