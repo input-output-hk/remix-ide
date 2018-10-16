@@ -1,5 +1,7 @@
 'use strict'
 
+var solc = require('solc/wrapper')
+var solcABI = require('solc/abi')
 var webworkify = require('webworkify')
 var compilerInput = require('./compiler-input')
 var remixLib = require('remix-lib')
@@ -20,6 +22,8 @@ function Compiler (handleImportCall, getCompilerAPIUrl) {
   var optimize = false
 
   var compileToIELE = false
+
+  var currentVersion = null
 
   this.setOptimize = function (_optimize) {
     optimize = _optimize
@@ -65,6 +69,7 @@ function Compiler (handleImportCall, getCompilerAPIUrl) {
   this.setCompileJSON = setCompileJSON // this is exposed for testing
 
   function onCompilerLoaded (version) {
+    currentVersion = version
     self.event.trigger('compilerLoaded', [version])
   }
 
@@ -437,14 +442,47 @@ function Compiler (handleImportCall, getCompilerAPIUrl) {
 
   function onInternalCompilerLoaded () {
     if (worker === null) {
-      compileJSON = function (source, optimize, cb) {
+      var compiler
+      if (typeof (window) === 'undefined') {
+        compiler = require('solc')
+      } else {
+        compiler = solc(window.Module)
+      }
+
+      compileJSON = function (source, optimize) {
         if (compileToIELE) {
           return compileSolidityToIELE(source, (result) => {
             return compilationFinished(result, [], source)
           })
+        } else {
+          var missingInputs = []
+          var missingInputsCallback = function (path) {
+            missingInputs.push(path)
+            return { error: 'Deferred import' }
+          }
+
+          var result
+          try {
+            var input = compilerInput(source.sources, {optimize: optimize, target: source.target})
+            result = compiler.compileStandardWrapper(input, missingInputsCallback)
+            result = JSON.parse(result)
+
+            // @rv: add extra `vm` data
+            var contracts = result.contracts || {}
+            for (var file in contracts) {
+              for (var contractName in contracts[file]) {
+                var contract = contracts[file][contractName]
+                contract.vm = 'evm'
+              }
+            }
+          } catch (exception) {
+            result = { error: 'Uncaught JavaScript exception:\n' + exception }
+          }
+
+          return compilationFinished(result, missingInputs, source)
         }
       }
-      onCompilerLoaded('isolc')
+      onCompilerLoaded(compiler.version())
     }
   }
   // exposed for use in node
@@ -560,12 +598,10 @@ function Compiler (handleImportCall, getCompilerAPIUrl) {
       // try compiling again with the new set of inputs
       internalCompile(source.sources, source.target, missingInputs)
     } else {
-      /*
-      // @rv: this is disabled
-      if (source.target.endsWith('.sol')) {
+      // @rv: this is disabled for iele vm
+      if (source.target.endsWith('.sol') && !compileToIELE) {
         data = updateInterface(data)
       }
-      */
       self.lastCompilationResult = {
         data: data,
         source: source
@@ -701,6 +737,22 @@ function Compiler (handleImportCall, getCompilerAPIUrl) {
     }
 
     cb(null, { 'sources': files, 'target': target })
+  }
+
+  function truncateVersion (version) {
+    var tmp = /^(\d+.\d+.\d+)/.exec(version)
+    if (tmp) {
+      return tmp[1]
+    }
+    return version
+  }
+
+  function updateInterface (data) {
+    console.log("updateInterface")
+    txHelper.visitContracts(data.contracts, (contract) => {
+      data.contracts[contract.file][contract.name].abi = solcABI.update(truncateVersion(currentVersion), contract.object.abi)
+    })
+    return data
   }
 }
 

@@ -63,7 +63,7 @@ class TxListener {
       } else if (payload.vm === 'ielevm') { // iele vm
         output = txResult.result
       } else { // evm
-        output = ethJSUtil.toBuffer(txResult.result)
+        output = txResult.result
       }
 
       const tx = {
@@ -438,7 +438,7 @@ class TxListener {
               params: this._decodeInputParams(inputData.substring(8), fnabi)
             }
             if (tx.output) {
-              this._resolvedTransactions[tx.hash].decodedOutput = txFormat.decodeResponse(tx.output, fnabi)
+              this._resolvedTransactions[tx.hash].decodedOutput = txFormat.decodeResponse(ethJSUtil.toBuffer(tx.output), fnabi)
             }
             return this._resolvedTransactions[tx.hash]
           }

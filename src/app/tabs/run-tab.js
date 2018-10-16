@@ -804,6 +804,14 @@ function settings (container, appAPI, appEvents, opts) {
       rpcUrl: (window.location.protocol + '//' + window.location.hostname + ':8546/'),
       vm: 'ielevm'
     })
+
+    addIfNotExists({
+      name: 'KEVM Testnet',
+      context: 'custom-rpc-kevm-testnet',
+      chainId: undefined,
+      rpcUrl: 'https://kevm-testnet.iohkdev.io:8546/',
+      vm: 'evm'
+    })
     // You can click `Connect to Custom RPC` button to connect to custom rpc node to do your development testing.
 
     // TODO: remove the `filter` below in the future when IELE testnet launches

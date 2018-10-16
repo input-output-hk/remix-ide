@@ -88,7 +88,11 @@ function ExecutionContext () {
 
   this.init = function (config) {
     this.config = config // @rv: save config to this object scope
-    executionContext = 'custom-rpc-iele-testnet'
+    if (config.get('history/execution-context')) {
+      executionContext = config.get('history/execution-context')
+    } else {
+      executionContext = 'custom-rpc-iele-testnet'
+    }
     return
     /*
     if (config.get('settings/always-use-vm')) {
