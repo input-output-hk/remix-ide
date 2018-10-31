@@ -740,11 +740,7 @@ function Compiler (handleImportCall, getCompilerAPIUrl) {
   }
 
   function truncateVersion (version) {
-    var tmp = /^(\d+.\d+.\d+)/.exec(version)
-    if (tmp) {
-      return tmp[1]
-    }
-    return version
+    return version.replace(/^(\d+.\d+.\d+)(.*)/, "$1")
   }
 
   function updateInterface (data) {

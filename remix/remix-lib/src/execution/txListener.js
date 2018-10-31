@@ -60,9 +60,7 @@ class TxListener {
       let output
       if (executionContext.isVM()) {
         output = txResult.result.vm.return
-      } else if (payload.vm === 'ielevm') { // iele vm
-        output = txResult.result
-      } else { // evm
+      } else { // evm or iele vm
         output = txResult.result
       }
 
