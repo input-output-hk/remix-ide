@@ -684,10 +684,6 @@ UniversalDApp.prototype.addCustomRPC = function ({rpcUrl, chainId, vm}) {
   rpcUrl = rpcUrl.trim()
   let name = `${rpcUrl} (chainId: ${chainId})`
   let context = `custom-rpc-${name}`
-  if (rpcUrl.match(/^https:\/\/kevm-testnet\.iohkdev\.io:8546/)) { // kevm testnet
-    name = 'KEVM Testnet'
-    context = `custom-rpc-kevm-testnet`
-  }
   const customRPC = {
     rpcUrl,
     chainId,

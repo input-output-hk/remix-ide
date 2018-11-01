@@ -1,6 +1,7 @@
 const yo = require('yo-yo')
 const csjs = require('csjs-inject')
-
+const minixhr = require('minixhr')
+const helper = require('../../lib/helper')
 const TreeView = require('../ui/TreeView')
 const modalDialog = require('../ui/modaldialog')
 const copyToClipboard = require('../ui/copy-to-clipboard')
@@ -9,6 +10,8 @@ const styleGuide = require('../ui/styles-guide/theme-chooser')
 const parseContracts = require('../contract/contractParser')
 const publishOnSwarm = require('../contract/publishOnSwarm')
 const executionContext = require('../../execution-context')
+const tooltip = require('../ui/tooltip')
+const QueryParams = require('../../lib/query-params')
 
 const styles = styleGuide.chooser()
 
@@ -28,7 +31,9 @@ module.exports = class CompileTab {
       compileContainer: null,
       errorContainer: null,
       contractNames: null,
-      contractEl: null
+      contractEl: null,
+      versionSelector: null,
+      version: null
     }
     self.data = {
       autoCompile: self._opts.config.get('autoCompile'),
@@ -36,8 +41,19 @@ module.exports = class CompileTab {
       compileTimeout: null,
       contractsDetails: {},
       maxTime: 1000,
-      timeout: 300
+      timeout: 300,
+      allversions: null,
+      selectedVersion: null,
+      baseurl: 'https://solc-bin.ethereum.org/bin'
     }
+    self._components = {
+      queryParams: new QueryParams()
+    }
+    self.fetchAllVersion((allversions, selectedVersion) => {
+      self.data.allversions = allversions
+      self.data.selectedVersion = selectedVersion
+      if (self._view.versionSelector) self.updateVersionSelector()
+    })
     self._events.editor.register('contentChanged', scheduleCompilation)
     self._events.editor.register('sessionSwitched', scheduleCompilation)
     function scheduleCompilation () {
@@ -79,6 +95,7 @@ module.exports = class CompileTab {
       self._view.compileIcon.classList.remove(`${css.spinningIcon}`)
       self._view.compileIcon.setAttribute('title', '')
     })
+    self._events.compiler.register('compilerLoaded', (version) => self.setVersionText(version))
     self._events.compiler.register('compilationFinished', function finish (success, data, source) {
       // console.log('@compile-tab.js compilationFinished: ', success, data, source)
       if (self._view.compileIcon) {
@@ -146,14 +163,77 @@ module.exports = class CompileTab {
         })
       }
       if (compileToIELE) {
+        const solidityCompilerVersionSelector = document.getElementById('solidity-compiler-version-selector')
         if (executionContext.isIeleVM()) {
+          solidityCompilerVersionSelector.style.display = 'none'
           compileToIELE.setAttribute('checked', '')
         } else {
+          solidityCompilerVersionSelector.style.display = 'block'
           compileToIELE.removeAttribute('checked')
         }
       }
     })
   }
+
+  fetchAllVersion (callback) {
+    var self = this
+    minixhr(`${self.data.baseurl}/list.json`, function (json, event) {
+      // @TODO: optimise and cache results to improve app loading times
+      var allversions, selectedVersion
+      if (event.type !== 'error') {
+        try {
+          const data = JSON.parse(json)
+          allversions = data.builds.slice().reverse()
+          selectedVersion = data.releases[data.latestRelease]
+          if (self._components.queryParams.get().version) selectedVersion = self._components.queryParams.get().version
+        } catch (e) {
+          tooltip('Cannot load compiler version list. It might have been blocked by an advertisement blocker. Please try deactivating any of them from this page and reload.')
+        }
+      } else {
+        allversions = [{ path: 'builtin', longVersion: 'latest local version' }]
+        selectedVersion = 'builtin'
+      }
+      callback(allversions, selectedVersion)
+    })
+  }
+
+  updateVersionSelector () {
+    const self = this
+    self._view.versionSelector.innerHTML = ''
+    self._view.versionSelector.appendChild(yo`<option disabled selected>Select new compiler version</option>`)
+    self.data.allversions.forEach(build => self._view.versionSelector.appendChild(yo`<option value=${build.path}>${build.longVersion}</option>`))
+    self._view.versionSelector.removeAttribute('disabled')
+    self._components.queryParams.update({ version: self.data.selectedVersion })
+    var url
+    if (self.data.selectedVersion === 'builtin') {
+      var location = window.document.location
+      location = location.protocol + '//' + location.host + '/' + location.pathname
+      if (location.endsWith('index.html')) location = location.substring(0, location.length - 10)
+      if (!location.endsWith('/')) location += '/'
+      url = location + 'soljson.js'
+    } else {
+      if (self.data.selectedVersion.indexOf('soljson') !== 0 || helper.checkSpecialChars(self.data.selectedVersion)) {
+        return console.log('loading ' + self.data.selectedVersion + ' not allowed')
+      }
+      url = `${self.data.baseurl}/${self.data.selectedVersion}`
+    }
+
+    self._opts.compiler.loadVersion(false, url)
+    self.setVersionText('(loading)')
+  }
+
+  setVersionText (text) {
+    const self = this
+    self.data.version = text
+    if (self._view.version) self._view.version.innerText = text
+  }
+
+  onchangeLoadVersion (event) {
+    const self = this
+    self.data.selectedVersion = self._view.versionSelector.value
+    self.updateVersionSelector()
+  }
+
   render () {
     const self = this
     if (self._view.el) return self._view.el
@@ -164,8 +244,18 @@ module.exports = class CompileTab {
     self._view.compileToIELE = yo`<input class="${css.compileToIELE}" onchange=${updateCompileToIELE} id="compileToIELE" type="checkbox" title="Compile to IELE">`
     if (self.data.autoCompile) self._view.autoCompile.setAttribute('checked', '')
     if (self.data.compileToIELE) self._view.compileToIELE.setAttribute('checked', '')
+    self._view.version = yo`<span id="version"></span>`
+    self._view.versionSelector = yo`
+    <select onchange=${self.onchangeLoadVersion.bind(self)} class="${css.select}" id="versionSelector" disabled>
+      <option disabled selected>Select new compiler version</option>
+    </select>`
+    if (self.data.allversions && self.data.selectedVersion) self.updateVersionSelector()
     self._view.compileContainer = yo`
       <div class="${css.compileContainer}">
+        <div id="solidity-compiler-version-selector" style="display:none;">
+          <span>Current version: </span> ${self._view.version}
+          ${self._view.versionSelector}
+        </div>
         <div class="${css.compileButtons}">
           ${self._view.compileButton}
           <div class="${css.settingsContainer}">
@@ -403,6 +493,13 @@ const css = csjs`
   }
   .questionMark:hover {
     color: ${styles.rightPanel.icon_HoverColor_TogglePanel};
+  }
+  .select {
+    font-weight: bold;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    ${styles.rightPanel.settingsTab.dropdown_SelectCompiler}
+    width: 100%;
   }
   .detailsJSON {
     padding: 8px 0;

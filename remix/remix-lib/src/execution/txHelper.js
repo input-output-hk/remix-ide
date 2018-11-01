@@ -31,15 +31,10 @@ module.exports = {
           if (typeof (x) === 'number') {
             x = x.toString(10)
           }
-
-          if (x.startsWith('0x')) {
+          if (x.match(/^0x/i)) {
             return x
           } else if (!isNaN(x)) {
-            if (x.startsWith('-')) {
-              return ieleTranslator.encode(x, {type: 'int'})
-            } else {
-              return '0x' + parseInt(x).toString(16)
-            }
+            return ieleTranslator.encode(x, {type: 'int'})
           } else {
             return '0x' + x
           }

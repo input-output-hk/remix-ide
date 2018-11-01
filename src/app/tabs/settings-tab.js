@@ -1,9 +1,7 @@
 var yo = require('yo-yo')
 var csjs = require('csjs-inject')
-var minixhr = require('minixhr')
 var remixLib = require('remix-lib')
 var QueryParams = require('../../lib/query-params')
-var helper = require('../../lib/helper')
 var modal = require('../ui/modal-dialog-custom')
 var tooltip = require('../ui/tooltip')
 var copyToClipboard = require('../ui/copy-to-clipboard')
@@ -23,7 +21,7 @@ module.exports = class SettingsTab {
     self._view = { /* eslint-disable */
       el: null,
       optionVM: null, personal: null, optimize: null, warnPersonalMode: null,
-      pluginInput: null, versionSelector: null, version: null,
+      pluginInput: null,
       theme: { dark: null, light: null, cardano: null },
       config: {
         solidity: null, general: null, themes: null,
@@ -31,9 +29,6 @@ module.exports = class SettingsTab {
       }
     } /* eslint-enable */
     self.data = {
-      allversions: null,
-      selectedVersion: null,
-      baseurl: 'https://solc-bin.ethereum.org/bin'
     }
     self.event = new EventManager()
     self._components.queryParams = new QueryParams()
@@ -42,15 +37,6 @@ module.exports = class SettingsTab {
     self._components.queryParams.update({ optimize: self.data.optimize })
     self._api.setOptimize(self.data.optimize, false)
     self.data.currentTheme = self._components.themeStorage.get('theme') || 'cardano'
-    self._events.compiler.register('compilerLoaded', (version) => self.setVersionText(version))
-    // @rv: no need to fetch solidity versions.
-    /*
-    self.fetchAllVersion((allversions, selectedVersion) => {
-      self.data.allversions = allversions
-      self.data.selectedVersion = selectedVersion
-      if (self._view.versionSelector) self._updateVersionSelector()
-    })
-    */
   }
   render () {
     const self = this
@@ -77,24 +63,10 @@ module.exports = class SettingsTab {
     Remix never persist any passphrase.`.split('\n').map(s => s.trim()).join(' ')
     self._view.warnPersonalMode = yo`<i title=${warnText} class="${css.icon} fa fa-exclamation-triangle" aria-hidden="true"></i>`
     self._view.pluginInput = yo`<textarea rows="4" cols="70" id="plugininput" type="text" class="${css.pluginTextArea}" ></textarea>`
-    self._view.versionSelector = yo`
-      <select onchange=${onchangeLoadVersion} class="${css.select}" id="versionSelector" disabled>
-        <option disabled selected>Select new compiler version</option>
-      </select>`
-    if (self.data.allversions && self.data.selectedVersion) self._updateVersionSelector()
-    self._view.version = yo`<span id="version"></span>`
     self._view.theme.cardano = yo`<input onchange=${onswitch2CardanoTheme} class="${css.col1}" name="theme" id="themeCardano" type="radio">`
     self._view.theme.light = yo`<input onchange=${onswitch2lightTheme} class="${css.col1}" name="theme" id="themeLight" type="radio">`
     self._view.theme.dark = yo`<input onchange=${onswitch2darkTheme} class="${css.col1}" name="theme" id="themeDark" type="radio">`
     self._view.theme[self.data.currentTheme].setAttribute('checked', 'checked')
-    self._view.config.solidity = yo`
-      <div class="${css.info}" style="display:none;">
-        <div class=${css.title}>Solidity version</div>
-        <span>Current version:</span> ${self._view.version}
-        <div class="${css.crow}">
-          ${self._view.versionSelector}
-        </div>
-      </div>`
     self._view.config.general = yo`
       <div class="${css.info}">
           <div class=${css.title}>General settings</div>
@@ -185,13 +157,10 @@ module.exports = class SettingsTab {
       </div>`
     self._view.el = yo`
       <div class="${css.settingsTabView} "id="settingsView">
-        ${self._view.config.solidity}
         ${self._view.config.general}
         ${self._view.gistToken}
         ${self._view.config.themes}
         ${self._view.config.plugin}
-        ${self._view.config.remixd}
-        ${self._view.config.localremixd}
       </div>`
     function onchangeOption (event) {
       self._opts.config.set('settings/always-use-vm', !self._opts.config.get('settings/always-use-vm'))
@@ -222,78 +191,10 @@ module.exports = class SettingsTab {
       self._components.queryParams.update({ optimize: self.data.optimize })
       self._api.setOptimize(self.data.optimize, true)
     }
-    function onchangeLoadVersion (event) {
-      self.data.selectedVersion = self._view.versionSelector.value
-      self._updateVersionSelector()
-    }
     function onchangePersonal (event) {
       self._opts.config.set('settings/personal-mode', !self._opts.config.get('settings/personal-mode'))
     }
     return self._view.el
-  }
-  setVersionText (text) {
-    const self = this
-    self.data.version = text
-    if (self._view.version) self._view.version.innerText = text
-  }
-  _updateVersionSelector () {
-    const self = this
-    self._view.versionSelector.innerHTML = ''
-    self._view.versionSelector.appendChild(yo`<option disabled selected>Select new compiler version</option>`)
-    self.data.allversions.forEach(build => self._view.versionSelector.appendChild(yo`<option value=${build.path}>${build.longVersion}</option>`))
-    self._view.versionSelector.removeAttribute('disabled')
-    self._components.queryParams.update({ version: self.data.selectedVersion })
-    var url
-    if (self.data.selectedVersion === 'builtin') {
-      var location = window.document.location
-      location = location.protocol + '//' + location.host + '/' + location.pathname
-      if (location.endsWith('index.html')) location = location.substring(0, location.length - 10)
-      if (!location.endsWith('/')) location += '/'
-      url = location + 'soljson.js'
-    } else {
-      if (self.data.selectedVersion.indexOf('soljson') !== 0 || helper.checkSpecialChars(self.data.selectedVersion)) {
-        return console.log('loading ' + self.data.selectedVersion + ' not allowed')
-      }
-      url = `${self.data.baseurl}/${self.data.selectedVersion}`
-    }
-    /*
-    // @rv: this is unnecessary
-    var isFirefox = typeof InstallTrigger !== 'undefined'
-    if (document.location.protocol !== 'file:' && Worker !== undefined && isFirefox) {
-      // Workers cannot load js on "file:"-URLs and we get a
-      // "Uncaught RangeError: Maximum call stack size exceeded" error on Chromium,
-      // resort to non-worker version in that case.
-      self._opts.compiler.loadVersion(true, url)
-      self.setVersionText('(loading using worker)')
-    } else {
-      self._opts.compiler.loadVersion(false, url)
-      self.setVersionText('(loading)')
-    }
-    */
-   // @rv: we don't use worker
-    self._opts.compiler.loadVersion(false, url)
-    self.setVersionText('(loading)')
-  }
-  fetchAllVersion (callback) {
-    var self = this
-    minixhr(`${self.data.baseurl}/list.json`, function (json, event) {
-      // @TODO: optimise and cache results to improve app loading times
-      var allversions, selectedVersion
-      if (event.type !== 'error') {
-        try {
-          const data = JSON.parse(json)
-          allversions = data.builds.slice().reverse()
-          selectedVersion = data.releases[data.latestRelease]
-          if (self._components.queryParams.get().version) selectedVersion = self._components.queryParams.get().version
-        } catch (e) {
-          tooltip('Cannot load compiler version list. It might have been blocked by an advertisement blocker. Please try deactivating any of them from this page and reload.')
-        }
-      } else {
-        allversions = [{ path: 'builtin', longVersion: 'latest local version' }]
-        selectedVersion = 'builtin'
-      }
-      callback(allversions, selectedVersion)
-    })
   }
 }
 
@@ -335,11 +236,6 @@ const css = csjs`
     margin-bottom: 1em;
     padding: .5em;
     font-weight: bold;
-  }
-  .select {
-    font-weight: bold;
-    margin-top: 1em;
-    ${styles.rightPanel.settingsTab.dropdown_SelectCompiler}
   }
   .heading {
     margin-bottom: 0;
