@@ -268,7 +268,7 @@ function Compiler (handleImportCall, getCompilerAPIUrl) {
               bytecode: {
                 object: contract['bin']
               },
-              ieleAssembly: contract['asm']['code']
+              ieleAssembly: contract['asm'] ? contract['asm']['code'] : null
             }
             delete contract['asm']
             delete contract['bin']
