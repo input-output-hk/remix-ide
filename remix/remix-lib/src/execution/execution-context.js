@@ -88,11 +88,7 @@ function ExecutionContext () {
 
   this.init = function (config) {
     this.config = config // @rv: save config to this object scope
-    if (config.get('history/execution-context')) {
-      executionContext = config.get('history/execution-context')
-    } else {
-      executionContext = 'custom-rpc-iele-testnet'
-    }
+    executionContext = 'custom-rpc-iohk-testnet'
     return
     /*
     if (config.get('settings/always-use-vm')) {
@@ -230,8 +226,10 @@ function ExecutionContext () {
     } else if (context.startsWith('custom-rpc-')) { // @rv: connect to Custom RPC
       executionContext = context
       web3.setProvider(new web3.providers.HttpProvider(endPointUrl))
-      self.event.trigger('contextChanged', [context])
-      return cb()
+      this.updateCustomRPCInfoIfNecessary(context).then(() => {
+        self.event.trigger('contextChanged', [context])
+        return cb()
+      })
     }
   }
 
@@ -261,6 +259,47 @@ function ExecutionContext () {
     this.listenOnLastBlockId = setInterval(() => {
       this._updateBlockGasLimit()
     }, 15000)
+  }
+
+  // @rv: Update the information of custom RPC
+  this.updateCustomRPCInfoIfNecessary = function (context) {
+    return new Promise((resolve, reject) => {
+      const customRPCList = this.config.get('custom-rpc-list') || []
+      const customRPC = customRPCList.filter((x) => x.context === executionContext)[0]
+      if (!customRPC || customRPC.context !== 'custom-rpc-iohk-testnet') {
+        return resolve()
+      } else if (customRPC.name === 'Unknown Network') {
+        const rpcUrl = customRPC.rpcUrl
+        window.fetch(rpcUrl, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            method: 'web3_clientVersion',
+            params: []
+          })
+        }).then(res => res.json())
+          .then(json => {
+            if (json.result.match(/\-iele/)) { // IELE Testnet
+              customRPC.name = 'IELE Testnet'
+              customRPC.vm = 'ielevm'
+            } else if (json.result.match(/\-kevm/)) { // KEVM Testnet
+              customRPC.name = 'KEVM Testnet'
+              customRPC.vm = 'evm'
+            }
+            this.config.set('custom-rpc-list', customRPCList)
+            return resolve()
+          })
+          .catch(_ => {
+            return resolve()
+          })
+      } else {
+        return resolve()
+      }
+    })
   }
 
   // TODO: not used here anymore and needs to be moved

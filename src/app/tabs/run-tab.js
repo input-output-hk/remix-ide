@@ -123,9 +123,19 @@ function runTab (appAPI = {}, appEvents = {}, opts = {}) {
     // @rv: toggle RV elements
     toggleRVElements()
     // set the final context. Cause it is possible that this is not the one we've originaly selected
-    selectExEnv.value = executionContext.getProvider()
+    const context = executionContext.getProvider()
+    selectExEnv.value = context
     fillAccountsList(appAPI, opts, el)
     event.trigger('clearInstance', [])
+    // @rv: update environment name
+    if (context === 'custom-rpc-iohk-testnet') {
+      const customRPC = opts.config.get('custom-rpc-list').filter((x) => x.context === context)[0]
+      if (customRPC) {
+        const option = selectExEnv.querySelector('option[value="custom-rpc-iohk-testnet"]')
+        option.setAttribute('title', customRPC.name)
+        option.innerText = customRPC.name
+      }
+    }
   }
 
   selectExEnv.addEventListener('change', function (event) {
@@ -752,10 +762,9 @@ function settings (container, appAPI, appEvents, opts) {
     })
   }
 
-  // @rv: remove custom rpc
-  function removeCustomRPC () {
+  // @rv: remove custom rpc by context
+  function removeCustomRPCByContext (context) {
     const $environmentSelect = $('#selectExEnvOptions')
-    const context = $environmentSelect.val()
     const customRPCList = opts.config.get('custom-rpc-list')
     const newCustomRPCList = []
     for (let i = 0; i < customRPCList.length; i++) {
@@ -779,10 +788,17 @@ function settings (container, appAPI, appEvents, opts) {
     $environmentSelect[0].dispatchEvent(new window.Event('change'))
   }
 
+  // @rv: remove custom rpc
+  function removeCustomRPC () {
+    const $environmentSelect = $('#selectExEnvOptions')
+    const context = $environmentSelect.val()
+    return removeCustomRPCByContext(context)
+  }
+
   // @rv: setup predefined Custom RPCs
   function setupPredefinedCustomRPCs () {
-    const customRPCList = opts.config.get('custom-rpc-list') || []
-
+    const customRPCList = []
+    const rpcUrl = (window.location.protocol + '//' + window.location.hostname + ':8546/')
     function addIfNotExists (customRPC) {
       let find = false
       for (let i = 0; i < customRPCList.length; i++) {
@@ -796,26 +812,15 @@ function settings (container, appAPI, appEvents, opts) {
         customRPCList.push(customRPC)
       }
     }
-
     addIfNotExists({
-      name: 'IELE Testnet',
-      context: 'custom-rpc-iele-testnet',
+      name: 'Unknown Network',
+      context: 'custom-rpc-iohk-testnet',
       chainId: undefined,
-      rpcUrl: (window.location.protocol + '//' + window.location.hostname + ':8546/'),
-      vm: 'ielevm'
-    })
-
-    addIfNotExists({
-      name: 'KEVM Testnet',
-      context: 'custom-rpc-kevm-testnet',
-      chainId: undefined,
-      rpcUrl: (window.location.protocol + '//' + window.location.hostname + ':8546/'),
+      rpcUrl: rpcUrl,
       vm: 'evm'
     })
     // You can click `Connect to Custom RPC` button to connect to custom rpc node to do your development testing.
-
-    // TODO: remove the `filter` below in the future when IELE testnet launches
-    opts.config.set('custom-rpc-list', customRPCList.filter((x) => x.context !== 'custom-rpc-iele-testnet-dev'))
+    opts.config.set('custom-rpc-list', customRPCList)
   }
 
   return el
@@ -827,8 +832,7 @@ function toggleRVElements () {
     $('#account-extra-section').show()
 
     const context = executionContext.getProvider()
-    if (context === 'custom-rpc-kevm-testnet' ||
-        context === 'custom-rpc-iele-testnet') {
+    if (context === 'custom-rpc-iohk-testnet') {
       // $('#request-from-faucet-btn').show()
       $('#remove-custom-rpc-icon').hide()
     } else {
