@@ -278,15 +278,15 @@ function ExecutionContext () {
           },
           body: JSON.stringify({
             jsonrpc: '2.0',
-            method: 'net_version',
+            method: 'web3_clientVersion',
             params: []
           })
         }).then(res => res.json())
           .then(json => {
-            if (json.result === '133753763') { // IELE Testnet
+            if (json.result.match(/\-iele/)) { // IELE Testnet
               customRPC.name = 'IELE Testnet'
               customRPC.vm = 'ielevm'
-            } else if (json.result === '13137357') { // KEVM Testnet
+            } else if (json.result.match(/\-kevm/)) { // KEVM Testnet
               customRPC.name = 'KEVM Testnet'
               customRPC.vm = 'evm'
             }
