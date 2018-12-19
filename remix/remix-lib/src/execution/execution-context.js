@@ -67,7 +67,7 @@ var vm = new EthJSVM({
 vm.stateManager = stateManager
 vm.blockchain = stateManager.blockchain
 vm.trie = stateManager.trie
-vm.stateManager.checkpoint()
+vm.stateManager.checkpoint(function () {})
 
 var web3VM = new Web3VMProvider()
 web3VM.setVM(vm)
@@ -283,10 +283,10 @@ function ExecutionContext () {
           })
         }).then(res => res.json())
           .then(json => {
-            if (json.result.match(/\-iele/)) { // IELE Testnet
+            if (json.result.match(/-iele/)) { // IELE Testnet
               customRPC.name = 'IELE Testnet'
               customRPC.vm = 'ielevm'
-            } else if (json.result.match(/\-kevm/)) { // KEVM Testnet
+            } else if (json.result.match(/-kevm/)) { // KEVM Testnet
               customRPC.name = 'KEVM Testnet'
               customRPC.vm = 'evm'
             }

@@ -150,7 +150,7 @@ TxRunner.prototype.runInVm = function (from, to, data, value, gasLimit, useCall,
   if (!useCall) {
     ++self.blockNumber
   } else {
-    executionContext.vm().stateManager.checkpoint()
+    executionContext.vm().stateManager.checkpoint(function () {})
   }
 
   executionContext.vm().runTx({block: block, tx: tx, skipBalance: true, skipNonce: true}, function (err, result) {
